@@ -105,7 +105,8 @@ const SearchPage: React.FC = () => {
           {/* Results Count */}
           <div className="mb-4 flex items-center justify-between">
             <p className="text-muted-foreground text-sm">
-              Found {data.totalCount.toLocaleString()} repositories
+              Found {data.totalCount.toLocaleString()}{" "}
+              {data.totalCount === 1 ? "repository" : "repositories"}
             </p>
           </div>
 

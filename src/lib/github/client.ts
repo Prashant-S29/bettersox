@@ -48,6 +48,95 @@ export interface GitHubSearchResponse {
   endCursor: string | null;
 }
 
+// GraphQL Response Types
+interface GraphQLLanguageNode {
+  name: string;
+  color: string;
+}
+
+interface GraphQLTopicNode {
+  topic: {
+    name: string;
+  };
+}
+
+interface GraphQLIssueTemplate {
+  name: string;
+}
+
+interface GraphQLRepositoryNode {
+  id: string;
+  name: string;
+  nameWithOwner: string;
+  description: string | null;
+  url: string;
+  stargazerCount: number;
+  forkCount: number;
+  openIssues: {
+    totalCount: number;
+  };
+  primaryLanguage: {
+    name: string;
+    color: string;
+  } | null;
+  languages: {
+    nodes: GraphQLLanguageNode[];
+  };
+  repositoryTopics: {
+    nodes: GraphQLTopicNode[];
+  };
+  hasIssuesEnabled: boolean;
+  updatedAt: string;
+  pushedAt: string;
+  createdAt: string;
+  licenseInfo: {
+    name: string;
+    spdxId: string;
+  } | null;
+  owner: {
+    login: string;
+    avatarUrl: string;
+  };
+  defaultBranchRef: {
+    name: string;
+  } | null;
+  goodFirstIssues: {
+    totalCount: number;
+  };
+  helpWantedIssues: {
+    totalCount: number;
+  };
+  contributingFile: {
+    id: string;
+  } | null;
+  codeOfConduct: {
+    id: string;
+  } | null;
+  issueTemplates: GraphQLIssueTemplate[];
+}
+
+interface GraphQLSearchResult {
+  repositoryCount: number;
+  pageInfo: {
+    hasNextPage: boolean;
+    endCursor: string | null;
+  };
+  edges: {
+    node: GraphQLRepositoryNode;
+  }[];
+}
+
+interface GraphQLResponse {
+  data: {
+    search: GraphQLSearchResult;
+  };
+  errors?: Array<{
+    message: string;
+    locations?: Array<{ line: number; column: number }>;
+    path?: string[];
+  }>;
+}
+
 const GITHUB_GRAPHQL_ENDPOINT = "https://api.github.com/graphql";
 
 export class GitHubClient {
@@ -161,7 +250,7 @@ export class GitHubClient {
       throw new Error(`GitHub API error: ${response.statusText}`);
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as GraphQLResponse;
 
     if (data.errors) {
       console.error("GraphQL errors:", JSON.stringify(data.errors, null, 2));
@@ -170,40 +259,35 @@ export class GitHubClient {
 
     const searchResult = data.data.search;
 
-    const repositories: GitHubRepository[] = searchResult.edges.map(
-      (edge: any) => {
-        const node = edge.node;
-        return {
-          id: node.id,
-          name: node.name,
-          nameWithOwner: node.nameWithOwner,
-          description: node.description,
-          url: node.url,
-          stargazerCount: node.stargazerCount,
-          forkCount: node.forkCount,
-          openIssuesCount: node.openIssues.totalCount,
-          primaryLanguage: node.primaryLanguage,
-          languages: node.languages.nodes,
-          topics: node.repositoryTopics.nodes.map((t: any) => t.topic.name),
-          hasIssues: node.hasIssuesEnabled,
-          hasGoodFirstIssues: node.goodFirstIssues.totalCount > 0,
-          hasHelpWantedIssues: node.helpWantedIssues.totalCount > 0,
-          updatedAt: node.updatedAt,
-          pushedAt: node.pushedAt,
-          createdAt: node.createdAt,
-          licenseInfo: node.licenseInfo,
-          owner: node.owner,
-          defaultBranchRef: node.defaultBranchRef,
-          hasContributingFile: !!node.contributingFile,
-          hasCodeOfConduct: !!node.codeOfConduct,
-          hasIssueTemplate:
-            node.issueTemplates && node.issueTemplates.length > 0,
-          repositoryTopics: node.repositoryTopics.nodes.map(
-            (t: any) => t.topic.name,
-          ),
-        };
-      },
-    );
+    const repositories: GitHubRepository[] = searchResult.edges.map((edge) => {
+      const node = edge.node;
+      return {
+        id: node.id,
+        name: node.name,
+        nameWithOwner: node.nameWithOwner,
+        description: node.description,
+        url: node.url,
+        stargazerCount: node.stargazerCount,
+        forkCount: node.forkCount,
+        openIssuesCount: node.openIssues.totalCount,
+        primaryLanguage: node.primaryLanguage,
+        languages: node.languages.nodes,
+        topics: node.repositoryTopics.nodes.map((t) => t.topic.name),
+        hasIssues: node.hasIssuesEnabled,
+        hasGoodFirstIssues: node.goodFirstIssues.totalCount > 0,
+        hasHelpWantedIssues: node.helpWantedIssues.totalCount > 0,
+        updatedAt: node.updatedAt,
+        pushedAt: node.pushedAt,
+        createdAt: node.createdAt,
+        licenseInfo: node.licenseInfo,
+        owner: node.owner,
+        defaultBranchRef: node.defaultBranchRef,
+        hasContributingFile: !!node.contributingFile,
+        hasCodeOfConduct: !!node.codeOfConduct,
+        hasIssueTemplate: node.issueTemplates && node.issueTemplates.length > 0,
+        repositoryTopics: node.repositoryTopics.nodes.map((t) => t.topic.name),
+      };
+    });
 
     return {
       repositories,

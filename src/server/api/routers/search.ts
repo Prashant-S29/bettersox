@@ -2,6 +2,7 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { githubClient } from "~/lib/github/client";
 import { buildGitHubSearchQuery } from "~/lib/github/query-builder";
+import type { GitHubRepository } from "~/lib/github/client";
 
 const SearchFiltersSchema = z.object({
   languages: z.array(z.string()).default([]),
@@ -47,6 +48,16 @@ const SearchFiltersSchema = z.object({
     .optional(),
 });
 
+export interface EnrichedRepository extends GitHubRepository {
+  missingFilters: {
+    frameworks: string[];
+    libraries: string[];
+    contributingGuide: boolean;
+    codeOfConduct: boolean;
+    issueTemplates: boolean;
+  };
+}
+
 export const searchRouter = createTRPCRouter({
   repositories: publicProcedure
     .input(
@@ -71,50 +82,47 @@ export const searchRouter = createTRPCRouter({
           input.cursor ?? undefined,
         );
 
-        // Filter results based on additional criteria not supported by GitHub search
-        let filteredRepos = result.repositories;
+        console.log(
+          `Fetched ${result.repositories.length} repositories from GitHub`,
+        );
 
-        // Filter by contributing guide
-        if (input.filters.hasContributingGuide) {
-          filteredRepos = filteredRepos.filter(
-            (repo) => repo.hasContributingFile,
-          );
-        }
-
-        // Filter by code of conduct
-        if (input.filters.hasCodeOfConduct) {
-          filteredRepos = filteredRepos.filter((repo) => repo.hasCodeOfConduct);
-        }
-
-        // Filter by issue templates
-        if (input.filters.hasIssueTemplates) {
-          filteredRepos = filteredRepos.filter((repo) => repo.hasIssueTemplate);
-        }
-
-        // Filter by frameworks (check in description and topics)
-        if (input.filters.frameworks.length > 0) {
-          filteredRepos = filteredRepos.filter((repo) => {
+        // Enrich repositories with missing filter information
+        const enrichedRepos: EnrichedRepository[] = result.repositories.map(
+          (repo) => {
             const repoText =
-              `${repo.description ?? ""} ${repo.topics.join(" ")}`.toLowerCase();
-            return input.filters.frameworks.some((fw) =>
-              repoText.includes(fw.toLowerCase()),
-            );
-          });
-        }
+              `${repo.description ?? ""} ${repo.topics.join(" ")} ${repo.languages.map((l) => l.name).join(" ")}`.toLowerCase();
 
-        // Filter by libraries (check in description and topics)
-        if (input.filters.libraries.length > 0) {
-          filteredRepos = filteredRepos.filter((repo) => {
-            const repoText =
-              `${repo.description ?? ""} ${repo.topics.join(" ")}`.toLowerCase();
-            return input.filters.libraries.some((lib) =>
-              repoText.includes(lib.toLowerCase()),
+            // Check which frameworks are missing
+            const missingFrameworks = input.filters.frameworks.filter(
+              (fw) => !repoText.includes(fw.toLowerCase()),
             );
-          });
-        }
+
+            // Check which libraries are missing
+            const missingLibraries = input.filters.libraries.filter(
+              (lib) => !repoText.includes(lib.toLowerCase()),
+            );
+
+            return {
+              ...repo,
+              missingFilters: {
+                frameworks: missingFrameworks,
+                libraries: missingLibraries,
+                contributingGuide:
+                  input.filters.hasContributingGuide &&
+                  !repo.hasContributingFile,
+                codeOfConduct:
+                  input.filters.hasCodeOfConduct && !repo.hasCodeOfConduct,
+                issueTemplates:
+                  input.filters.hasIssueTemplates && !repo.hasIssueTemplate,
+              },
+            };
+          },
+        );
+
+        console.log(`Returning ${enrichedRepos.length} enriched repositories`);
 
         return {
-          repositories: filteredRepos,
+          repositories: enrichedRepos,
           totalCount: result.totalCount,
           hasNextPage: result.hasNextPage,
           endCursor: result.endCursor,

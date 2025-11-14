@@ -8,10 +8,12 @@ import {
   ExternalLinkIcon,
   GitPullRequestIcon,
 } from "lucide-react";
-import type { GitHubRepository } from "~/lib/github/client";
+import type { EnrichedRepository } from "~/server/api/routers/search";
+import Image from "next/image";
+import Link from "next/link";
 
 interface RepositoryCardProps {
-  repository: GitHubRepository;
+  repository: EnrichedRepository;
 }
 
 export const RepositoryCard: React.FC<RepositoryCardProps> = ({
@@ -38,26 +40,36 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
     return `${Math.floor(diffDays / 365)} years ago`;
   };
 
+  // Check if any filters are missing
+  const hasMissingFilters =
+    repository.missingFilters.frameworks.length > 0 ||
+    repository.missingFilters.libraries.length > 0 ||
+    repository.missingFilters.contributingGuide ||
+    repository.missingFilters.codeOfConduct ||
+    repository.missingFilters.issueTemplates;
+
   return (
     <div className="border-border bg-card hover:border-primary rounded-lg border p-6 transition-all hover:shadow-md">
       {/* Header */}
       <div className="mb-3 flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <img
+            <Image
               src={repository.owner.avatarUrl}
               alt={repository.owner.login}
               className="h-6 w-6 rounded-full"
+              width={50}
+              height={50}
             />
 
-            <a
+            <Link
               href={repository.url}
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary text-lg font-semibold hover:underline"
             >
               {repository.nameWithOwner}
-            </a>
+            </Link>
             <ExternalLinkIcon className="text-muted-foreground h-4 w-4" />
           </div>
         </div>
@@ -68,6 +80,40 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
         <p className="text-muted-foreground mb-4 line-clamp-2 text-sm">
           {repository.description}
         </p>
+      )}
+
+      {/* Missing Filters Warning */}
+      {hasMissingFilters && (
+        <div className="mb-4 rounded-md border p-3">
+          <div className="flex items-start gap-2">
+            <div className="flex-1">
+              <p className="mb-1 text-xs font-medium">
+                Missing some requested features:
+              </p>
+              <div className="flex flex-wrap gap-1">
+                {repository.missingFilters.frameworks.map((fw) => (
+                  <Badge key={fw} variant="outline">
+                    {fw}
+                  </Badge>
+                ))}
+                {repository.missingFilters.libraries.map((lib) => (
+                  <Badge key={lib} variant="outline">
+                    {lib}
+                  </Badge>
+                ))}
+                {repository.missingFilters.contributingGuide && (
+                  <Badge variant="outline">No contributing guide</Badge>
+                )}
+                {repository.missingFilters.codeOfConduct && (
+                  <Badge variant="outline">No code of conduct</Badge>
+                )}
+                {repository.missingFilters.issueTemplates && (
+                  <Badge variant="outline">No issue templates</Badge>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Stats */}
@@ -152,18 +198,18 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
       {/* Actions */}
       <div className="mt-4 flex gap-2">
         <Button asChild variant="default" size="sm">
-          <a href={repository.url} target="_blank" rel="noopener noreferrer">
+          <Link href={repository.url} target="_blank" rel="noopener noreferrer">
             View Repository
-          </a>
+          </Link>
         </Button>
         <Button asChild variant="outline" size="sm">
-          <a
+          <Link
             href={`${repository.url}/issues?q=is:issue+is:open+label:"good+first+issue"`}
             target="_blank"
             rel="noopener noreferrer"
           >
             View Issues
-          </a>
+          </Link>
         </Button>
       </div>
     </div>
