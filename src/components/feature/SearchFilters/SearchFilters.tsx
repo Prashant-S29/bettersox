@@ -1,10 +1,16 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
+
+// icons
+import { ChevronDown } from "lucide-react";
+
+// types
+import type { SearchFilters } from "~/types";
+
+// components
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { XIcon } from "lucide-react";
-import type { SearchFilters } from "~/types";
 
 interface SearchFiltersPanelProps {
   filters: SearchFilters;
@@ -15,6 +21,8 @@ export const SearchFiltersPanel: React.FC<SearchFiltersPanelProps> = ({
   filters,
   onClearAll,
 }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
   const hasAnyFilters =
     filters.languages.length > 0 ||
     filters.frameworks.length > 0 ||
@@ -38,24 +46,31 @@ export const SearchFiltersPanel: React.FC<SearchFiltersPanelProps> = ({
   if (!hasAnyFilters) return null;
 
   return (
-    <div className="border-border bg-muted/30 rounded-lg border p-4">
-      <div className="mb-3 flex items-center justify-between">
+    <div className="border-border bg-muted/30 flex flex-col rounded-lg border px-5 py-3">
+      <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold">Active Filters</h3>
-        <Button onClick={onClearAll} variant="ghost" size="sm">
-          <XIcon className="mr-1 h-4 w-4" />
-          Clear All
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" size="sm" onClick={onClearAll}>
+            Clear all
+          </Button>
+          <Button
+            variant="secondary"
+            size="icon-sm"
+            onClick={() => setIsOpen((prev) => !prev)}
+          >
+            <ChevronDown className={`${isOpen ? "rotate-180" : ""}`} />
+          </Button>
+        </div>
       </div>
 
-      <div className="space-y-3">
-        {/* Tech Stack */}
+      <div
+        className={`space-y-3 ${isOpen ? "max-h-[500px]" : "max-h-0"} overflow-hidden duration-300`}
+      >
         {(filters.languages.length > 0 ||
           filters.frameworks.length > 0 ||
           filters.libraries.length > 0) && (
-          <div>
-            <p className="text-muted-foreground mb-2 text-xs font-medium">
-              Tech Stack
-            </p>
+          <div className="mt-5 flex items-center justify-between gap-2">
+            <p className="text-muted-foreground text-sm">Tech Stack</p>
             <div className="flex flex-wrap gap-1">
               {filters.languages.map((lang) => (
                 <Badge key={lang} variant="secondary">
@@ -76,22 +91,18 @@ export const SearchFiltersPanel: React.FC<SearchFiltersPanelProps> = ({
           </div>
         )}
 
-        {/* Experience Level */}
         {filters.experienceLevel && (
-          <div>
-            <p className="text-muted-foreground mb-2 text-xs font-medium">
-              Experience Level
-            </p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-muted-foreground text-sm">Experience Level</p>
             <Badge variant="secondary">{filters.experienceLevel}</Badge>
           </div>
         )}
 
-        {/* Project Characteristics */}
         {(filters.projectAge ??
           filters.competitionLevel ??
           filters.activityLevel) && (
-          <div>
-            <p className="text-muted-foreground mb-2 text-xs font-medium">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-muted-foreground text-sm">
               Project Characteristics
             </p>
             <div className="flex flex-wrap gap-1">
@@ -112,15 +123,12 @@ export const SearchFiltersPanel: React.FC<SearchFiltersPanelProps> = ({
           </div>
         )}
 
-        {/* Metrics */}
         {(filters.minStars ??
           filters.maxStars ??
           filters.minContributors ??
           filters.maxContributors) && (
-          <div>
-            <p className="text-muted-foreground mb-2 text-xs font-medium">
-              Metrics
-            </p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-muted-foreground text-sm">Metrics</p>
             <div className="flex flex-wrap gap-1">
               {filters.minStars && (
                 <Badge variant="secondary">Min Stars: {filters.minStars}</Badge>
@@ -142,15 +150,12 @@ export const SearchFiltersPanel: React.FC<SearchFiltersPanelProps> = ({
           </div>
         )}
 
-        {/* Issues & Community */}
         {(filters.hasGoodFirstIssues ||
           filters.hasHelpWanted ||
           filters.hasContributingGuide ||
           filters.hasCodeOfConduct) && (
-          <div>
-            <p className="text-muted-foreground mb-2 text-xs font-medium">
-              Community Features
-            </p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-muted-foreground text-sm">Community Features</p>
             <div className="flex flex-wrap gap-1">
               {filters.hasGoodFirstIssues && (
                 <Badge variant="secondary">Good First Issues</Badge>
@@ -168,12 +173,9 @@ export const SearchFiltersPanel: React.FC<SearchFiltersPanelProps> = ({
           </div>
         )}
 
-        {/* Topics */}
         {filters.topics.length > 0 && (
-          <div>
-            <p className="text-muted-foreground mb-2 text-xs font-medium">
-              Topics
-            </p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-muted-foreground text-sm">Topics</p>
             <div className="flex flex-wrap gap-1">
               {filters.topics.map((topic) => (
                 <Badge key={topic} variant="secondary">
@@ -184,12 +186,9 @@ export const SearchFiltersPanel: React.FC<SearchFiltersPanelProps> = ({
           </div>
         )}
 
-        {/* Licenses */}
         {filters.licenses?.length > 0 && (
-          <div>
-            <p className="text-muted-foreground mb-2 text-xs font-medium">
-              Licenses
-            </p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-muted-foreground text-sm">Licenses</p>
             <div className="flex flex-wrap gap-1">
               {filters.licenses.map((license) => (
                 <Badge key={license} variant="secondary">
@@ -200,12 +199,9 @@ export const SearchFiltersPanel: React.FC<SearchFiltersPanelProps> = ({
           </div>
         )}
 
-        {/* Time-based */}
         {filters.lastPushedWithin && (
-          <div>
-            <p className="text-muted-foreground mb-2 text-xs font-medium">
-              Activity
-            </p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-muted-foreground text-sm">Activity</p>
             <Badge variant="secondary">
               Updated within {filters.lastPushedWithin}
             </Badge>

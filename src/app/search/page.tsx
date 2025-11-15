@@ -1,10 +1,28 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import { Loader2Icon, SearchIcon } from "lucide-react";
 import { api } from "~/trpc/react";
+
+// hooks
+import { useSearchParams, useRouter } from "next/navigation";
+
+// icons
+import { Loader2Icon, SearchIcon } from "lucide-react";
+
+// libs
 import { searchParamsToFilters } from "~/lib/nlp/utils";
+import {
+  getCachedSearchResults,
+  cacheSearchResults,
+  addToSearchHistory,
+  db,
+} from "~/lib/storage";
+
+// types
+import type { SearchFilters } from "~/types";
+import type { EnrichedRepository } from "~/server/api/routers/search";
+
+// components
 import {
   RepositoryCard,
   SearchFiltersPanel,
@@ -12,34 +30,46 @@ import {
   type SortOption,
 } from "~/components/feature";
 import { Button } from "~/components/ui/button";
-import type { SearchFilters } from "~/types";
-import type { EnrichedRepository } from "~/server/api/routers/search";
-import {
-  getCachedSearchResults,
-  cacheSearchResults,
-  addToSearchHistory,
-} from "~/lib/storage";
+import { Container } from "~/components/common";
+import { Skeleton } from "~/components/ui/skeleton";
 
 const SearchPage: React.FC = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
+
+  // states
   const [filters, setFilters] = useState<SearchFilters | null>(null);
   const [query, setQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("stars");
+  const [resultsPerPage, setResultsPerPage] = useState(20);
   const [cachedResults, setCachedResults] = useState<{
     repositories: EnrichedRepository[];
     totalCount: number;
   } | null>(null);
   const [usingCache, setUsingCache] = useState(false);
 
-  // Parse filters from URL on mount
+  useEffect(() => {
+    const loadPreferences = async () => {
+      try {
+        const prefs = await db.getPreferences();
+        if (prefs) {
+          setSortBy(prefs.sortBy);
+          setResultsPerPage(prefs.resultsPerPage);
+        }
+      } catch (error) {
+        console.error("Error loading preferences:", error);
+      }
+    };
+
+    void loadPreferences();
+  }, []);
+
   useEffect(() => {
     const parsedFilters = searchParamsToFilters(searchParams);
     setFilters(parsedFilters as SearchFilters);
     setQuery(searchParams.get("q") ?? "");
   }, [searchParams]);
 
-  // Try to get cached results first
   useEffect(() => {
     if (!filters || !query) return;
 
@@ -57,21 +87,24 @@ const SearchPage: React.FC = () => {
     void loadCachedResults();
   }, [filters, query]);
 
-  // Fetch repositories using tRPC (only if not using cache)
   const { data, isLoading, error } = api.search.repositories.useQuery(
     {
       filters: filters!,
-      perPage: 20,
+      perPage: resultsPerPage,
     },
     {
       enabled: !!filters && !usingCache,
     },
   );
 
-  // Cache results when they arrive
   useEffect(() => {
     if (data && filters && query) {
-      void cacheSearchResults(query, filters, data.repositories, data.totalCount);
+      void cacheSearchResults(
+        query,
+        filters,
+        data.repositories,
+        data.totalCount,
+      );
       void addToSearchHistory(query, filters);
     }
   }, [data, filters, query]);
@@ -97,10 +130,8 @@ const SearchPage: React.FC = () => {
     );
   }
 
-  // Use cached results if available, otherwise use fresh data
   let displayData = usingCache ? cachedResults : data;
 
-  // Sort repositories
   if (displayData) {
     const sorted = [...displayData.repositories].sort((a, b) => {
       switch (sortBy) {
@@ -128,15 +159,13 @@ const SearchPage: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto py-8">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="mb-4 flex items-center justify-between">
+    <Container className="flex flex-col gap-9">
+      <div className="flex flex-col gap-5">
+        <div className="flex justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Search Results</h1>
+            <h1 className="text-2xl font-semibold">Search Results</h1>
             {query && (
               <p className="text-muted-foreground mt-1 text-sm">
-                Showing results for:{" "}
                 <span className="font-medium">{query}</span>
                 {usingCache && (
                   <span className="ml-2 text-xs text-blue-600 dark:text-blue-400">
@@ -146,53 +175,52 @@ const SearchPage: React.FC = () => {
               </p>
             )}
           </div>
-          <div className="flex gap-2">
-            {usingCache && (
-              <Button onClick={handleRefresh} variant="outline" size="sm">
-                Refresh
+
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex gap-2">
+              {usingCache && (
+                <Button onClick={handleRefresh} variant="outline" size="sm">
+                  Refresh
+                </Button>
+              )}
+              <Button onClick={handleNewSearch} variant="outline" size="sm">
+                <SearchIcon className="mr-2 h-4 w-4" />
+                New Search
               </Button>
-            )}
-            <Button onClick={handleNewSearch} variant="outline">
-              <SearchIcon className="mr-2 h-4 w-4" />
-              New Search
-            </Button>
+            </div>
           </div>
         </div>
-
-        {/* Filters Panel */}
         <SearchFiltersPanel filters={filters} onClearAll={handleClearFilters} />
       </div>
 
-      {/* Loading State */}
       {isLoading && !usingCache && (
-        <div className="flex items-center justify-center py-20">
-          <div className="text-center">
-            <Loader2Icon className="text-primary mx-auto mb-4 h-12 w-12 animate-spin" />
-            <p className="text-lg font-medium">Searching repositories...</p>
-            <p className="text-muted-foreground text-sm">
-              This may take a few moments
-            </p>
-          </div>
+        <div className="flex flex-col gap-3">
+          {Array.from({ length: 7 }).map((_, index) => (
+            <div
+              key={index}
+              className="flex w-full flex-col gap-2 rounded-lg border p-3"
+            >
+              <Skeleton className="h-5 w-[200px]" />
+              <Skeleton className="h-5 w-[500px]" />
+            </div>
+          ))}
         </div>
       )}
 
-      {/* Error State */}
       {error && !usingCache && (
-        <div className="border-destructive bg-destructive/10 rounded-lg border p-6 text-center">
-          <p className="text-destructive text-lg font-semibold">
-            Error loading results
-          </p>
-          <p className="text-muted-foreground mt-2 text-sm">{error.message}</p>
-          <Button onClick={handleNewSearch} variant="outline" className="mt-4">
+        <div className="bg-card flex justify-between gap-9 rounded-lg border p-3">
+          <div>
+            <p className="text-destructive text-sm">Error in loading results</p>
+            <p className="text-muted-foreground text-sm">{error.message}</p>
+          </div>
+          <Button onClick={handleNewSearch} variant="secondary" size="sm">
             Try Again
           </Button>
         </div>
       )}
 
-      {/* Results */}
       {displayData && (
-        <>
-          {/* Results Count & Sort */}
+        <div>
           <div className="mb-4 flex items-center justify-between">
             <p className="text-muted-foreground text-sm">
               Found {displayData.totalCount.toLocaleString()}{" "}
@@ -201,7 +229,6 @@ const SearchPage: React.FC = () => {
             <SortOptions value={sortBy} onChange={setSortBy} />
           </div>
 
-          {/* Repository List */}
           {displayData.repositories.length > 0 ? (
             <div className="space-y-4">
               {displayData.repositories.map((repo) => (
@@ -224,9 +251,9 @@ const SearchPage: React.FC = () => {
               </Button>
             </div>
           )}
-        </>
+        </div>
       )}
-    </div>
+    </Container>
   );
 };
 

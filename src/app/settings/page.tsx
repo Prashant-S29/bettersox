@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  SettingsIcon,
   Loader2Icon,
   SaveIcon,
   MoonIcon,
@@ -25,6 +24,7 @@ import { Separator } from "~/components/ui/separator";
 import { db, type UserPreferences } from "~/lib/storage";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
+import { Container } from "~/components/common";
 
 const SettingsPage: React.FC = () => {
   const router = useRouter();
@@ -168,15 +168,11 @@ const SettingsPage: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto max-w-3xl py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="mb-2 flex items-center gap-2 text-3xl font-bold">
-          <SettingsIcon className="h-8 w-8" />
-          Settings
-        </h1>
+    <Container className="flex flex-col gap-6">
+      <div>
+        <h1 className="text-2xl font-semibold">Settings</h1>
         <p className="text-muted-foreground text-sm">
-          Customize your BetterSOX experience
+          Customize your BetterSox experience
         </p>
       </div>
 
@@ -184,7 +180,7 @@ const SettingsPage: React.FC = () => {
         {/* Appearance */}
         <section>
           <h2 className="mb-4 text-xl font-semibold">Appearance</h2>
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="theme">Theme</Label>
               <Select
@@ -215,9 +211,6 @@ const SettingsPage: React.FC = () => {
                   </SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-muted-foreground text-xs">
-                Theme changes apply immediately
-              </p>
             </div>
           </div>
         </section>
@@ -226,12 +219,12 @@ const SettingsPage: React.FC = () => {
 
         {/* Default Filters */}
         <section>
-          <h2 className="mb-4 text-xl font-semibold">Default Filters</h2>
+          <h2 className=" text-xl font-semibold">Default Filters</h2>
           <p className="text-muted-foreground mb-4 text-sm">
             Set default languages and frameworks to prefill in searches
           </p>
 
-          <div className="space-y-4">
+          <div className="space-y-6">
             {/* Languages */}
             <div className="space-y-2">
               <Label htmlFor="languages">Default Languages</Label>
@@ -300,7 +293,7 @@ const SettingsPage: React.FC = () => {
         <section>
           <h2 className="mb-4 text-xl font-semibold">Search Preferences</h2>
 
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="sortBy">Default Sort By</Label>
               <Select
@@ -384,7 +377,7 @@ const SettingsPage: React.FC = () => {
           )}
         </div>
       </div>
-    </div>
+    </Container>
   );
 };
 
