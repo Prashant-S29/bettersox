@@ -730,7 +730,7 @@ export const libraryPatterns: Pattern[] = [
     valueExtractor: () => "Firebase",
   },
   {
-    regex: /\bnodejs|node\.js\b/gi,
+    regex: /\b(?:node|nodejs|node\.js)\b/gi,
     category: "library",
     valueExtractor: () => "Node.js",
   },
