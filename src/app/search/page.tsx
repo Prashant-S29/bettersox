@@ -8,12 +8,23 @@ import { searchParamsToFilters } from "~/lib/nlp/utils";
 import { RepositoryCard, SearchFiltersPanel } from "~/components/feature";
 import { Button } from "~/components/ui/button";
 import type { SearchFilters } from "~/types";
+import type { EnrichedRepository } from "~/server/api/routers/search";
+import {
+  getCachedSearchResults,
+  cacheSearchResults,
+  addToSearchHistory,
+} from "~/lib/storage";
 
 const SearchPage: React.FC = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [filters, setFilters] = useState<SearchFilters | null>(null);
   const [query, setQuery] = useState("");
+  const [cachedResults, setCachedResults] = useState<{
+    repositories: EnrichedRepository[];
+    totalCount: number;
+  } | null>(null);
+  const [usingCache, setUsingCache] = useState(false);
 
   // Parse filters from URL on mount
   useEffect(() => {
@@ -22,16 +33,42 @@ const SearchPage: React.FC = () => {
     setQuery(searchParams.get("q") ?? "");
   }, [searchParams]);
 
-  // Fetch repositories using tRPC
+  // Try to get cached results first
+  useEffect(() => {
+    if (!filters || !query) return;
+
+    const loadCachedResults = async () => {
+      const cached = await getCachedSearchResults(query, filters);
+      if (cached) {
+        setCachedResults({
+          repositories: cached.results as EnrichedRepository[],
+          totalCount: cached.totalCount,
+        });
+        setUsingCache(true);
+      }
+    };
+
+    loadCachedResults();
+  }, [filters, query]);
+
+  // Fetch repositories using tRPC (only if not using cache)
   const { data, isLoading, error } = api.search.repositories.useQuery(
     {
       filters: filters!,
       perPage: 20,
     },
     {
-      enabled: !!filters,
+      enabled: !!filters && !usingCache,
     },
   );
+
+  // Cache results when they arrive
+  useEffect(() => {
+    if (data && filters && query) {
+      cacheSearchResults(query, filters, data.repositories, data.totalCount);
+      addToSearchHistory(query, filters);
+    }
+  }, [data, filters, query]);
 
   const handleClearFilters = () => {
     router.push("/");
@@ -41,6 +78,11 @@ const SearchPage: React.FC = () => {
     router.push("/");
   };
 
+  const handleRefresh = () => {
+    setUsingCache(false);
+    setCachedResults(null);
+  };
+
   if (!filters) {
     return (
       <div className="container mx-auto flex min-h-screen items-center justify-center py-8">
@@ -48,6 +90,9 @@ const SearchPage: React.FC = () => {
       </div>
     );
   }
+
+  // Use cached results if available, otherwise use fresh data
+  const displayData = usingCache ? cachedResults : data;
 
   return (
     <div className="container mx-auto py-8">
@@ -60,13 +105,25 @@ const SearchPage: React.FC = () => {
               <p className="text-muted-foreground mt-1 text-sm">
                 Showing results for:{" "}
                 <span className="font-medium">{query}</span>
+                {usingCache && (
+                  <span className="ml-2 text-xs text-blue-600 dark:text-blue-400">
+                    (cached)
+                  </span>
+                )}
               </p>
             )}
           </div>
-          <Button onClick={handleNewSearch} variant="outline">
-            <SearchIcon className="mr-2 h-4 w-4" />
-            New Search
-          </Button>
+          <div className="flex gap-2">
+            {usingCache && (
+              <Button onClick={handleRefresh} variant="outline" size="sm">
+                Refresh
+              </Button>
+            )}
+            <Button onClick={handleNewSearch} variant="outline">
+              <SearchIcon className="mr-2 h-4 w-4" />
+              New Search
+            </Button>
+          </div>
         </div>
 
         {/* Filters Panel */}
@@ -74,7 +131,7 @@ const SearchPage: React.FC = () => {
       </div>
 
       {/* Loading State */}
-      {isLoading && (
+      {isLoading && !usingCache && (
         <div className="flex items-center justify-center py-20">
           <div className="text-center">
             <Loader2Icon className="text-primary mx-auto mb-4 h-12 w-12 animate-spin" />
@@ -87,7 +144,7 @@ const SearchPage: React.FC = () => {
       )}
 
       {/* Error State */}
-      {error && (
+      {error && !usingCache && (
         <div className="border-destructive bg-destructive/10 rounded-lg border p-6 text-center">
           <p className="text-destructive text-lg font-semibold">
             Error loading results
@@ -100,31 +157,22 @@ const SearchPage: React.FC = () => {
       )}
 
       {/* Results */}
-      {data && !isLoading && (
+      {displayData && (
         <>
           {/* Results Count */}
           <div className="mb-4 flex items-center justify-between">
             <p className="text-muted-foreground text-sm">
-              Found {data.totalCount.toLocaleString()}{" "}
-              {data.totalCount === 1 ? "repository" : "repositories"}
+              Found {displayData.totalCount.toLocaleString()}{" "}
+              {displayData.totalCount === 1 ? "repository" : "repositories"}
             </p>
           </div>
 
           {/* Repository List */}
-          {data.repositories.length > 0 ? (
+          {displayData.repositories.length > 0 ? (
             <div className="space-y-4">
-              {data.repositories.map((repo) => (
+              {displayData.repositories.map((repo) => (
                 <RepositoryCard key={repo.id} repository={repo} />
               ))}
-
-              {/* Load More */}
-              {data.hasNextPage && (
-                <div className="flex justify-center pt-6">
-                  <Button variant="outline" disabled>
-                    Load More (Coming Soon)
-                  </Button>
-                </div>
-              )}
             </div>
           ) : (
             <div className="border-border bg-muted/30 rounded-lg border p-12 text-center">
