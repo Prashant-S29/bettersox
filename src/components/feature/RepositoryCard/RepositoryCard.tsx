@@ -1,6 +1,6 @@
-'use client'
+"use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
@@ -17,6 +17,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useBookmarks } from "~/hooks";
 import { toast } from "sonner";
+import { db } from "~/lib/storage";
 
 interface RepositoryCardProps {
   repository: EnrichedRepository;
@@ -27,7 +28,24 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
 }) => {
   const { isBookmarked, addBookmark, removeBookmark } = useBookmarks();
   const [isBookmarkLoading, setIsBookmarkLoading] = useState(false);
+  const [showMissingFilters, setShowMissingFilters] = useState(true);
   const bookmarked = isBookmarked(repository.id);
+
+  // Load user preferences
+  useEffect(() => {
+    const loadPreferences = async () => {
+      try {
+        const prefs = await db.getPreferences();
+        if (prefs) {
+          setShowMissingFilters(prefs.showMissingFilters);
+        }
+      } catch (error) {
+        console.error("Error loading preferences:", error);
+      }
+    };
+
+    void loadPreferences();
+  }, []);
 
   const formatNumber = (num: number): string => {
     if (num >= 1000) {
@@ -124,8 +142,8 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
         </p>
       )}
 
-      {/* Missing Filters Warning */}
-      {hasMissingFilters && (
+      {/* Missing Filters Warning - Only show if preference is enabled */}
+      {showMissingFilters && hasMissingFilters && (
         <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/30">
           <div className="flex items-start gap-2">
             <AlertCircleIcon className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-500" />
