@@ -201,7 +201,7 @@ export const SideMenu: React.FC = () => {
         {!loading && recentHistory.length > 0 && (
           <SidebarGroup className="relative flex flex-col">
             <SidebarGroupLabel>Last 30 Days</SidebarGroupLabel>
-            <SidebarGroupContent className="relative max-h-[400px] overflow-y-scroll pb-8">
+            <SidebarGroupContent className="relative max-h-[300px] overflow-y-scroll pb-12">
               <SidebarMenu>
                 {recentHistory.map((item) => (
                   <SidebarMenuItem key={item.id}>
@@ -215,7 +215,7 @@ export const SideMenu: React.FC = () => {
                 ))}
               </SidebarMenu>
             </SidebarGroupContent>
-            <div className="from-sidebar pointer-events-none absolute bottom-0 left-0 z-10 h-8 w-full bg-linear-to-t to-transparent" />
+            <div className="from-sidebar pointer-events-none absolute bottom-0 left-0 z-10 h-12 w-full bg-linear-to-t to-transparent" />
           </SidebarGroup>
         )}
 
@@ -262,7 +262,7 @@ export const SideMenu: React.FC = () => {
                 target="_blank"
                 className="text-sm underline underline-offset-2"
               >
-                Watch this Video by Theo
+                Watch this video by Theo
               </Link>
             </div>
           </SidebarMenuItem>
