@@ -5,7 +5,12 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Loader2Icon, SearchIcon } from "lucide-react";
 import { api } from "~/trpc/react";
 import { searchParamsToFilters } from "~/lib/nlp/utils";
-import { RepositoryCard, SearchFiltersPanel } from "~/components/feature";
+import {
+  RepositoryCard,
+  SearchFiltersPanel,
+  SortOptions,
+  type SortOption,
+} from "~/components/feature";
 import { Button } from "~/components/ui/button";
 import type { SearchFilters } from "~/types";
 import type { EnrichedRepository } from "~/server/api/routers/search";
@@ -20,6 +25,7 @@ const SearchPage: React.FC = () => {
   const router = useRouter();
   const [filters, setFilters] = useState<SearchFilters | null>(null);
   const [query, setQuery] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>("stars");
   const [cachedResults, setCachedResults] = useState<{
     repositories: EnrichedRepository[];
     totalCount: number;
@@ -92,7 +98,34 @@ const SearchPage: React.FC = () => {
   }
 
   // Use cached results if available, otherwise use fresh data
-  const displayData = usingCache ? cachedResults : data;
+  let displayData = usingCache ? cachedResults : data;
+
+  // Sort repositories
+  if (displayData) {
+    const sorted = [...displayData.repositories].sort((a, b) => {
+      switch (sortBy) {
+        case "stars":
+          return b.stargazerCount - a.stargazerCount;
+        case "forks":
+          return b.forkCount - a.forkCount;
+        case "updated":
+          return (
+            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+          );
+        case "created":
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+        default:
+          return 0;
+      }
+    });
+
+    displayData = {
+      ...displayData,
+      repositories: sorted,
+    };
+  }
 
   return (
     <div className="container mx-auto py-8">
@@ -159,12 +192,13 @@ const SearchPage: React.FC = () => {
       {/* Results */}
       {displayData && (
         <>
-          {/* Results Count */}
+          {/* Results Count & Sort */}
           <div className="mb-4 flex items-center justify-between">
             <p className="text-muted-foreground text-sm">
               Found {displayData.totalCount.toLocaleString()}{" "}
               {displayData.totalCount === 1 ? "repository" : "repositories"}
             </p>
+            <SortOptions value={sortBy} onChange={setSortBy} />
           </div>
 
           {/* Repository List */}
