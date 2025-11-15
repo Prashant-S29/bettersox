@@ -66,10 +66,11 @@ export const SearchFiltersPanel: React.FC<SearchFiltersPanelProps> = ({
       <div
         className={`space-y-3 ${isOpen ? "max-h-[500px]" : "max-h-0"} overflow-hidden duration-300`}
       >
+        <div className="h-5 w-full" />
         {(filters.languages.length > 0 ||
           filters.frameworks.length > 0 ||
           filters.libraries.length > 0) && (
-          <div className="mt-5 flex items-center justify-between gap-2">
+          <div className="flex items-center justify-between gap-2">
             <p className="text-muted-foreground text-sm">Tech Stack</p>
             <div className="flex flex-wrap gap-1">
               {filters.languages.map((lang) => (

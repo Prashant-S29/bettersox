@@ -5,6 +5,7 @@ import { api } from "~/trpc/react";
 
 // hooks
 import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchHistoryContext } from "~/contexts/SearchHistoryContext";
 
 // icons
 import { Loader2Icon, SearchIcon } from "lucide-react";
@@ -36,8 +37,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 const SearchPage: React.FC = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
-
-  // states
+  const { refresh: refreshHistory } = useSearchHistoryContext();
   const [filters, setFilters] = useState<SearchFilters | null>(null);
   const [query, setQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("stars");
@@ -105,9 +105,11 @@ const SearchPage: React.FC = () => {
         data.repositories,
         data.totalCount,
       );
-      void addToSearchHistory(query, filters);
+      void addToSearchHistory(query, filters).then(() => {
+        void refreshHistory();
+      });
     }
-  }, [data, filters, query]);
+  }, [data, filters, query, refreshHistory]);
 
   const handleClearFilters = () => {
     router.push("/");

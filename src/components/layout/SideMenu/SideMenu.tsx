@@ -1,8 +1,16 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useMemo } from "react";
+import Link from "next/link";
+
+// hooks
+import { useSearchHistoryContext } from "~/contexts/SearchHistoryContext";
 import { useRouter } from "next/navigation";
+
+// icons
 import { PlusIcon, BookmarkIcon, SettingsIcon } from "lucide-react";
+
+// components
 import {
   Sidebar,
   SidebarContent,
@@ -17,11 +25,14 @@ import {
   SidebarSeparator,
 } from "~/components/ui/sidebar";
 import { Button } from "~/components/ui/button";
-import { useSearchHistory } from "~/hooks";
+
+// libs
 import { filtersToSearchParams } from "~/lib/nlp/utils";
+
+// types
 import type { SearchHistoryItem } from "~/lib/storage";
 import type { SearchFilters } from "~/types";
-import Link from "next/link";
+import { Skeleton } from "~/components/ui/skeleton";
 
 interface FilterPreset {
   id: string;
@@ -82,22 +93,20 @@ const presets: FilterPreset[] = [
 
 export const SideMenu: React.FC = () => {
   const router = useRouter();
+  const { history, loading } = useSearchHistoryContext();
 
-  const { history, loading } = useSearchHistory(20);
-
-  const [recentHistory, setRecentHistory] = useState<SearchHistoryItem[]>([]);
-  const [olderHistory, setOlderHistory] = useState<SearchHistoryItem[]>([]);
-
-  useEffect(() => {
-    if (history.length === 0) return;
+  // Memoize the history splitting to prevent recalculation
+  const { recentHistory, olderHistory } = useMemo(() => {
+    if (history.length === 0) {
+      return { recentHistory: [], olderHistory: [] };
+    }
 
     const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
 
     const recent = history.filter((item) => item.timestamp >= thirtyDaysAgo);
     const older = history.filter((item) => item.timestamp < thirtyDaysAgo);
 
-    setRecentHistory(recent);
-    setOlderHistory(older);
+    return { recentHistory: recent, olderHistory: older };
   }, [history]);
 
   const handleHistoryClick = (item: SearchHistoryItem) => {
@@ -174,6 +183,20 @@ export const SideMenu: React.FC = () => {
         </SidebarGroup>
 
         <SidebarSeparator />
+
+        {loading && (
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu className="gap-2">
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <SidebarMenuItem key={index}>
+                    <Skeleton className="h-5 w-full" />
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         {!loading && recentHistory.length > 0 && (
           <SidebarGroup>
