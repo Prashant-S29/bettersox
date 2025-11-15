@@ -16,7 +16,7 @@ export const Provider: React.FC<{ children: React.ReactNode }> = ({
 
   return (
     <TRPCReactProvider>
-      <ThemeProvider attribute="class" defaultTheme="light">
+      <ThemeProvider attribute="class">
         <CacheProvider>{children}</CacheProvider>
       </ThemeProvider>
     </TRPCReactProvider>

@@ -1,18 +1,20 @@
 import type { SearchFilters } from "~/types";
 
-export function filtersToSearchParams(filters: SearchFilters): URLSearchParams {
+export function filtersToSearchParams(
+  filters: Partial<SearchFilters>,
+): URLSearchParams {
   const params = new URLSearchParams();
 
-  if (filters.languages.length > 0) {
+  if (filters.languages && filters.languages.length > 0) {
     params.set("languages", filters.languages.join(","));
   }
-  if (filters.frameworks.length > 0) {
+  if (filters.frameworks && filters.frameworks.length > 0) {
     params.set("frameworks", filters.frameworks.join(","));
   }
-  if (filters.libraries.length > 0) {
+  if (filters.libraries && filters.libraries.length > 0) {
     params.set("libraries", filters.libraries.join(","));
   }
-  if (filters.topics.length > 0) {
+  if (filters.topics && filters.topics.length > 0) {
     params.set("topics", filters.topics.join(","));
   }
 
@@ -77,7 +79,10 @@ export function filtersToSearchParams(filters: SearchFilters): URLSearchParams {
     params.set("lastPushed", filters.lastPushedWithin);
   }
 
-  if (filters.maintainerResponsiveness !== "any") {
+  if (
+    filters.maintainerResponsiveness &&
+    filters.maintainerResponsiveness !== "any"
+  ) {
     params.set("responsiveness", filters.maintainerResponsiveness);
   }
 
