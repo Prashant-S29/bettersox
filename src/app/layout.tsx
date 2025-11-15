@@ -3,7 +3,7 @@ import "~/styles/globals.css";
 import { type Metadata } from "next";
 import { Geist } from "next/font/google";
 import { Provider } from "~/lib/provider";
-import { Header } from "~/components/layout";
+import { SideMenu } from "~/components/layout";
 
 export const metadata: Metadata = {
   title: "BetterSox",
@@ -24,8 +24,12 @@ export default function RootLayout({
     <html lang="en" className={`${geist.variable}`}>
       <body>
         <Provider>
-          <Header />
-          {children}
+          {/* <Header /> */}
+          <SideMenu />
+          <main className="w-full">
+            {/* <SidebarTrigger /> */}
+            {children}
+          </main>
         </Provider>
       </body>
     </html>

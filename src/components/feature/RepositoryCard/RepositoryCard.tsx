@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
+import Image from "next/image";
+import Link from "next/link";
+
+// icons
 import {
   StarIcon,
   GitForkIcon,
@@ -11,13 +13,22 @@ import {
   GitPullRequestIcon,
   AlertCircleIcon,
   BookmarkIcon,
+  ArrowUpRight,
 } from "lucide-react";
+
+// types
 import type { EnrichedRepository } from "~/server/api/routers/search";
-import Image from "next/image";
-import Link from "next/link";
+
+// hooks
 import { useBookmarks } from "~/hooks";
-import { toast } from "sonner";
+
+// libs
 import { db } from "~/lib/storage";
+
+// components
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { toast } from "sonner";
 
 interface RepositoryCardProps {
   repository: EnrichedRepository;
@@ -95,8 +106,7 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
     repository.missingFilters.issueTemplates;
 
   return (
-    <div className="border-border bg-card hover:border-primary rounded-lg border p-6 transition-all hover:shadow-md">
-      {/* Header */}
+    <div className="border-border bg-card rounded-lg border p-6 transition-all">
       <div className="mb-3 flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-2">
@@ -120,87 +130,71 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
           </div>
         </div>
 
-        {/* Bookmark Button */}
-        <Button
-          variant={bookmarked ? "default" : "outline"}
-          size="icon-sm"
-          onClick={handleBookmarkToggle}
-          disabled={isBookmarkLoading}
-          className="shrink-0"
-        >
-          <BookmarkIcon
-            className="h-4 w-4"
-            fill={bookmarked ? "currentColor" : "none"}
-          />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon-sm"
+            onClick={handleBookmarkToggle}
+            disabled={isBookmarkLoading}
+            className="shrink-0"
+          >
+            <BookmarkIcon
+              className="h-4 w-4"
+              fill={bookmarked ? "currentColor" : "none"}
+            />
+          </Button>
+          <Button asChild variant="default" size="icon-sm">
+            <Link
+              href={repository.url}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <ArrowUpRight />
+            </Link>
+          </Button>
+        </div>
       </div>
 
-      {/* Description */}
       {repository.description && (
         <p className="text-muted-foreground mb-4 line-clamp-2 text-sm">
           {repository.description}
         </p>
       )}
 
-      {/* Missing Filters Warning - Only show if preference is enabled */}
       {showMissingFilters && hasMissingFilters && (
-        <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/30">
-          <div className="flex items-start gap-2">
-            <AlertCircleIcon className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-500" />
-            <div className="flex-1">
-              <p className="mb-1 text-xs font-medium text-amber-800 dark:text-amber-400">
+        <div className="bg-sidebar-accent/50 mb-4 rounded-md border p-3">
+          <div className="flex w-full items-center justify-between">
+            <div className="flex items-center gap-2">
+              <AlertCircleIcon className="w-4" />
+              <p className="text-xs font-medium">
                 Missing some requested features:
               </p>
-              <div className="flex flex-wrap gap-1">
-                {repository.missingFilters.frameworks.map((fw) => (
-                  <Badge
-                    key={fw}
-                    variant="outline"
-                    className="border-amber-300 bg-amber-100 text-amber-800 dark:border-amber-700 dark:bg-amber-900/50 dark:text-amber-300"
-                  >
-                    {fw} not found
-                  </Badge>
-                ))}
-                {repository.missingFilters.libraries.map((lib) => (
-                  <Badge
-                    key={lib}
-                    variant="outline"
-                    className="border-amber-300 bg-amber-100 text-amber-800 dark:border-amber-700 dark:bg-amber-900/50 dark:text-amber-300"
-                  >
-                    {lib} not found
-                  </Badge>
-                ))}
-                {repository.missingFilters.contributingGuide && (
-                  <Badge
-                    variant="outline"
-                    className="border-amber-300 bg-amber-100 text-amber-800 dark:border-amber-700 dark:bg-amber-900/50 dark:text-amber-300"
-                  >
-                    No contributing guide
-                  </Badge>
-                )}
-                {repository.missingFilters.codeOfConduct && (
-                  <Badge
-                    variant="outline"
-                    className="border-amber-300 bg-amber-100 text-amber-800 dark:border-amber-700 dark:bg-amber-900/50 dark:text-amber-300"
-                  >
-                    No code of conduct
-                  </Badge>
-                )}
-                {repository.missingFilters.issueTemplates && (
-                  <Badge
-                    variant="outline"
-                    className="border-amber-300 bg-amber-100 text-amber-800 dark:border-amber-700 dark:bg-amber-900/50 dark:text-amber-300"
-                  >
-                    No issue templates
-                  </Badge>
-                )}
-              </div>
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {repository.missingFilters.frameworks.map((fw) => (
+                <Badge key={fw} variant="outline">
+                  {fw} not found
+                </Badge>
+              ))}
+              {repository.missingFilters.libraries.map((lib) => (
+                <Badge key={lib} variant="outline">
+                  {lib} not found
+                </Badge>
+              ))}
+              {repository.missingFilters.contributingGuide && (
+                <Badge variant="outline">No contributing guide</Badge>
+              )}
+              {repository.missingFilters.codeOfConduct && (
+                <Badge variant="outline">No code of conduct</Badge>
+              )}
+              {repository.missingFilters.issueTemplates && (
+                <Badge variant="outline">No issue templates</Badge>
+              )}
             </div>
           </div>
         </div>
       )}
 
-      {/* Stats */}
       <div className="text-muted-foreground mb-4 flex flex-wrap items-center gap-4 text-sm">
         {repository.primaryLanguage && (
           <div className="flex items-center gap-1.5">
@@ -230,7 +224,6 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
         <span>Updated {formatDate(repository.pushedAt)}</span>
       </div>
 
-      {/* Topics */}
       {repository.topics.length > 0 && (
         <div className="mb-4 flex flex-wrap gap-2">
           {repository.topics.slice(0, 5).map((topic) => (
@@ -246,55 +239,22 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
         </div>
       )}
 
-      {/* Badges */}
       <div className="flex flex-wrap gap-2">
         {repository.hasGoodFirstIssues && (
-          <Badge variant="outline" className="border-green-500 text-green-700">
-            Good First Issues
-          </Badge>
+          <Badge variant="outline">Good First Issues</Badge>
         )}
         {repository.hasHelpWantedIssues && (
-          <Badge variant="outline" className="border-blue-500 text-blue-700">
-            Help Wanted
-          </Badge>
+          <Badge variant="outline">Help Wanted</Badge>
         )}
         {repository.hasContributingFile && (
-          <Badge
-            variant="outline"
-            className="border-purple-500 text-purple-700"
-          >
-            Contributing Guide
-          </Badge>
+          <Badge variant="outline">Contributing Guide</Badge>
         )}
         {repository.hasCodeOfConduct && (
-          <Badge
-            variant="outline"
-            className="border-orange-500 text-orange-700"
-          >
-            Code of Conduct
-          </Badge>
+          <Badge variant="outline">Code of Conduct</Badge>
         )}
         {repository.licenseInfo && (
           <Badge variant="outline">{repository.licenseInfo.name}</Badge>
         )}
-      </div>
-
-      {/* Actions */}
-      <div className="mt-4 flex gap-2">
-        <Button asChild variant="default" size="sm">
-          <Link href={repository.url} target="_blank" rel="noopener noreferrer">
-            View Repository
-          </Link>
-        </Button>
-        <Button asChild variant="outline" size="sm">
-          <Link
-            href={`${repository.url}/issues?q=is:issue+is:open+label:"good+first+issue"`}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            View Issues
-          </Link>
-        </Button>
       </div>
     </div>
   );

@@ -1,12 +1,19 @@
 "use client";
 
 import React from "react";
+
+// types
+import type { EnrichedRepository } from "~/server/api/routers/search";
+
+// hooks
 import { useRouter } from "next/navigation";
-import { BookmarkIcon, Loader2Icon, TrashIcon } from "lucide-react";
 import { useBookmarks } from "~/hooks";
+
+// components
 import { Button } from "~/components/ui/button";
 import { RepositoryCard } from "~/components/feature";
-import type { EnrichedRepository } from "~/server/api/routers/search";
+import { Container } from "~/components/common";
+import { Skeleton } from "~/components/ui/skeleton";
 
 const BookmarksPage: React.FC = () => {
   const router = useRouter();
@@ -22,82 +29,76 @@ const BookmarksPage: React.FC = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="container mx-auto flex min-h-screen items-center justify-center py-8">
-        <Loader2Icon className="text-primary h-8 w-8 animate-spin" />
-      </div>
-    );
-  }
-
   return (
-    <div className="container mx-auto py-8">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <h1 className="flex items-center gap-2 text-3xl font-bold">
-              <BookmarkIcon className="h-8 w-8" />
-              Bookmarks
-            </h1>
-            <p className="text-muted-foreground mt-1 text-sm">
-              {bookmarks.length}{" "}
-              {bookmarks.length === 1 ? "repository" : "repositories"} saved
-            </p>
-          </div>
-
-          <div className="flex gap-2">
-            {bookmarks.length > 0 && (
-              <Button onClick={handleClearAll} variant="outline" size="sm">
-                <TrashIcon className="mr-2 h-4 w-4" />
-                Clear All
-              </Button>
-            )}
-            <Button onClick={() => router.push("/")} variant="default">
-              New Search
-            </Button>
-          </div>
+    <Container className="flex flex-col gap-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold">Bookmarks</h1>
+          <p className="text-muted-foreground text-sm">
+            {bookmarks.length}{" "}
+            {bookmarks.length === 1 ? "repository" : "repositories"} saved
+          </p>
         </div>
+
+        {bookmarks.length > 0 && (
+          <Button onClick={handleClearAll} variant="outline" size="sm">
+            Clear All
+          </Button>
+        )}
       </div>
 
-      {/* Bookmarks List */}
-      {bookmarks.length > 0 ? (
-        <div className="space-y-4">
-          {bookmarks.map((bookmark) => {
-            // Transform bookmark repository to EnrichedRepository
-            const enrichedRepo: EnrichedRepository = {
-              ...bookmark.repository,
-              missingFilters: {
-                frameworks: [],
-                libraries: [],
-                contributingGuide: false,
-                codeOfConduct: false,
-                issueTemplates: false,
-              },
-            };
-
-            return (
-              <RepositoryCard key={bookmark.id} repository={enrichedRepo} />
-            );
-          })}
+      {loading ? (
+        <div className="flex flex-col gap-3">
+          {Array.from({ length: 7 }).map((_, index) => (
+            <div
+              key={index}
+              className="flex w-full flex-col gap-2 rounded-lg border p-3"
+            >
+              <Skeleton className="h-5 w-[200px]" />
+              <Skeleton className="h-5 w-[500px]" />
+            </div>
+          ))}
         </div>
       ) : (
-        <div className="border-border bg-muted/30 rounded-lg border p-12 text-center">
-          <BookmarkIcon className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-          <p className="text-lg font-semibold">No bookmarks yet</p>
-          <p className="text-muted-foreground mt-2 text-sm">
-            Start bookmarking repositories to see them here
-          </p>
-          <Button
-            onClick={() => router.push("/")}
-            variant="outline"
-            className="mt-4"
-          >
-            Search Repositories
-          </Button>
-        </div>
+        <>
+          {bookmarks.length > 0 ? (
+            <div className="space-y-4">
+              {bookmarks.map((bookmark) => {
+                const enrichedRepo: EnrichedRepository = {
+                  ...bookmark.repository,
+                  missingFilters: {
+                    frameworks: [],
+                    libraries: [],
+                    contributingGuide: false,
+                    codeOfConduct: false,
+                    issueTemplates: false,
+                  },
+                };
+
+                return (
+                  <RepositoryCard key={bookmark.id} repository={enrichedRepo} />
+                );
+              })}
+            </div>
+          ) : (
+            <div className="bg-sidebar-accent/50 flex items-center justify-between rounded-md border px-5 py-3">
+              <p className="text-sm font-medium">
+                You have no bookmarks yet. Start by searching for repositories
+                and adding them to your bookmarks.
+              </p>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push("/")}
+              >
+                New Search
+              </Button>
+            </div>
+          )}
+        </>
       )}
-    </div>
+    </Container>
   );
 };
 
