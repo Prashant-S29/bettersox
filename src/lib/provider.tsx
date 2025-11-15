@@ -3,6 +3,7 @@
 import { ThemeProvider } from "next-themes";
 import { useMount } from "~/hooks";
 import { TRPCReactProvider } from "~/trpc/react";
+import { CacheProvider } from "./storage/CacheProvider";
 
 export const Provider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -16,7 +17,7 @@ export const Provider: React.FC<{ children: React.ReactNode }> = ({
   return (
     <TRPCReactProvider>
       <ThemeProvider attribute="class" defaultTheme="light">
-        {children}
+        <CacheProvider>{children}</CacheProvider>
       </ThemeProvider>
     </TRPCReactProvider>
   );

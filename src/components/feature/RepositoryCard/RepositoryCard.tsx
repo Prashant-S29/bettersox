@@ -1,4 +1,6 @@
-import React from "react";
+'use client'
+
+import React, { useState } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
@@ -7,10 +9,14 @@ import {
   CircleDotIcon,
   ExternalLinkIcon,
   GitPullRequestIcon,
+  AlertCircleIcon,
+  BookmarkIcon,
 } from "lucide-react";
 import type { EnrichedRepository } from "~/server/api/routers/search";
 import Image from "next/image";
 import Link from "next/link";
+import { useBookmarks } from "~/hooks";
+import { toast } from "sonner";
 
 interface RepositoryCardProps {
   repository: EnrichedRepository;
@@ -19,6 +25,10 @@ interface RepositoryCardProps {
 export const RepositoryCard: React.FC<RepositoryCardProps> = ({
   repository,
 }) => {
+  const { isBookmarked, addBookmark, removeBookmark } = useBookmarks();
+  const [isBookmarkLoading, setIsBookmarkLoading] = useState(false);
+  const bookmarked = isBookmarked(repository.id);
+
   const formatNumber = (num: number): string => {
     if (num >= 1000) {
       return `${(num / 1000).toFixed(1)}k`;
@@ -38,6 +48,24 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
     if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
     if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
     return `${Math.floor(diffDays / 365)} years ago`;
+  };
+
+  const handleBookmarkToggle = async () => {
+    try {
+      setIsBookmarkLoading(true);
+      if (bookmarked) {
+        await removeBookmark(repository.id);
+        toast.success("Removed from bookmarks");
+      } else {
+        await addBookmark(repository);
+        toast.success("Added to bookmarks");
+      }
+    } catch (error) {
+      console.error("Error updating bookmark:", error);
+      toast.error("Failed to update bookmark");
+    } finally {
+      setIsBookmarkLoading(false);
+    }
   };
 
   // Check if any filters are missing
@@ -73,6 +101,20 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
             <ExternalLinkIcon className="text-muted-foreground h-4 w-4" />
           </div>
         </div>
+
+        {/* Bookmark Button */}
+        <Button
+          variant={bookmarked ? "default" : "outline"}
+          size="icon-sm"
+          onClick={handleBookmarkToggle}
+          disabled={isBookmarkLoading}
+          className="shrink-0"
+        >
+          <BookmarkIcon
+            className="h-4 w-4"
+            fill={bookmarked ? "currentColor" : "none"}
+          />
+        </Button>
       </div>
 
       {/* Description */}
@@ -84,31 +126,55 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
 
       {/* Missing Filters Warning */}
       {hasMissingFilters && (
-        <div className="mb-4 rounded-md border p-3">
+        <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/30">
           <div className="flex items-start gap-2">
+            <AlertCircleIcon className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-500" />
             <div className="flex-1">
-              <p className="mb-1 text-xs font-medium">
+              <p className="mb-1 text-xs font-medium text-amber-800 dark:text-amber-400">
                 Missing some requested features:
               </p>
               <div className="flex flex-wrap gap-1">
                 {repository.missingFilters.frameworks.map((fw) => (
-                  <Badge key={fw} variant="outline">
-                    {fw}
+                  <Badge
+                    key={fw}
+                    variant="outline"
+                    className="border-amber-300 bg-amber-100 text-amber-800 dark:border-amber-700 dark:bg-amber-900/50 dark:text-amber-300"
+                  >
+                    {fw} not found
                   </Badge>
                 ))}
                 {repository.missingFilters.libraries.map((lib) => (
-                  <Badge key={lib} variant="outline">
-                    {lib}
+                  <Badge
+                    key={lib}
+                    variant="outline"
+                    className="border-amber-300 bg-amber-100 text-amber-800 dark:border-amber-700 dark:bg-amber-900/50 dark:text-amber-300"
+                  >
+                    {lib} not found
                   </Badge>
                 ))}
                 {repository.missingFilters.contributingGuide && (
-                  <Badge variant="outline">No contributing guide</Badge>
+                  <Badge
+                    variant="outline"
+                    className="border-amber-300 bg-amber-100 text-amber-800 dark:border-amber-700 dark:bg-amber-900/50 dark:text-amber-300"
+                  >
+                    No contributing guide
+                  </Badge>
                 )}
                 {repository.missingFilters.codeOfConduct && (
-                  <Badge variant="outline">No code of conduct</Badge>
+                  <Badge
+                    variant="outline"
+                    className="border-amber-300 bg-amber-100 text-amber-800 dark:border-amber-700 dark:bg-amber-900/50 dark:text-amber-300"
+                  >
+                    No code of conduct
+                  </Badge>
                 )}
                 {repository.missingFilters.issueTemplates && (
-                  <Badge variant="outline">No issue templates</Badge>
+                  <Badge
+                    variant="outline"
+                    className="border-amber-300 bg-amber-100 text-amber-800 dark:border-amber-700 dark:bg-amber-900/50 dark:text-amber-300"
+                  >
+                    No issue templates
+                  </Badge>
                 )}
               </div>
             </div>
