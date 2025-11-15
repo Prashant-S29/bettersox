@@ -135,14 +135,17 @@ class BetterSOXDB {
         // Check if cache is expired
         if (cached && cached.expiresAt < Date.now()) {
           // Cache expired, delete it
-          this.deleteCachedSearch(searchId);
+          void this.deleteCachedSearch(searchId);
           resolve(null);
         } else {
           resolve(cached ?? null);
         }
       };
 
-      request.onerror = () => reject(request.error);
+      request.onerror = () =>
+        reject(
+          new Error(request.error?.message ?? "Failed to get cached search"),
+        );
     });
   }
 
@@ -154,7 +157,8 @@ class BetterSOXDB {
       const request = store.put(cached);
 
       request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
+      request.onerror = () =>
+        reject(new Error(request.error?.message ?? "Failed to cache search"));
     });
   }
 
@@ -166,7 +170,10 @@ class BetterSOXDB {
       const request = store.delete(searchId);
 
       request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
+      request.onerror = () =>
+        reject(
+          new Error(request.error?.message ?? "Failed to delete cached search"),
+        );
     });
   }
 
@@ -182,14 +189,17 @@ class BetterSOXDB {
       request.onsuccess = () => {
         const cursor = request.result;
         if (cursor) {
-          cursor.delete();
+          void cursor.delete();
           cursor.continue();
         } else {
           resolve();
         }
       };
 
-      request.onerror = () => reject(request.error);
+      request.onerror = () =>
+        reject(
+          new Error(request.error?.message ?? "Failed to clear expired cache"),
+        );
     });
   }
 
@@ -205,7 +215,10 @@ class BetterSOXDB {
       const request = store.put(item);
 
       request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
+      request.onerror = () =>
+        reject(
+          new Error(request.error?.message ?? "Failed to add search history"),
+        );
     });
   }
 
@@ -229,7 +242,10 @@ class BetterSOXDB {
         }
       };
 
-      request.onerror = () => reject(request.error);
+      request.onerror = () =>
+        reject(
+          new Error(request.error?.message ?? "Failed to get search history"),
+        );
     });
   }
 
@@ -241,7 +257,10 @@ class BetterSOXDB {
       const request = store.clear();
 
       request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
+      request.onerror = () =>
+        reject(
+          new Error(request.error?.message ?? "Failed to clear search history"),
+        );
     });
   }
 
@@ -257,7 +276,8 @@ class BetterSOXDB {
       const request = store.put(bookmark);
 
       request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
+      request.onerror = () =>
+        reject(new Error(request.error?.message ?? "Failed to add bookmark"));
     });
   }
 
@@ -269,7 +289,10 @@ class BetterSOXDB {
       const request = store.delete(id);
 
       request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
+      request.onerror = () =>
+        reject(
+          new Error(request.error?.message ?? "Failed to remove bookmark"),
+        );
     });
   }
 
@@ -280,8 +303,10 @@ class BetterSOXDB {
       const store = transaction.objectStore(STORES.BOOKMARKS);
       const request = store.get(id);
 
-      request.onsuccess = () => resolve(request.result ?? null);
-      request.onerror = () => reject(request.error);
+      request.onsuccess = () =>
+        resolve((request.result as Bookmark | undefined) ?? null);
+      request.onerror = () =>
+        reject(new Error(request.error?.message ?? "Failed to get bookmark"));
     });
   }
 
@@ -305,7 +330,10 @@ class BetterSOXDB {
         }
       };
 
-      request.onerror = () => reject(request.error);
+      request.onerror = () =>
+        reject(
+          new Error(request.error?.message ?? "Failed to get all bookmarks"),
+        );
     });
   }
 
@@ -320,8 +348,12 @@ class BetterSOXDB {
       const store = transaction.objectStore(STORES.USER_PREFERENCES);
       const request = store.get("preferences");
 
-      request.onsuccess = () => resolve(request.result ?? null);
-      request.onerror = () => reject(request.error);
+      request.onsuccess = () =>
+        resolve((request.result as UserPreferences | undefined) ?? null);
+      request.onerror = () =>
+        reject(
+          new Error(request.error?.message ?? "Failed to get preferences"),
+        );
     });
   }
 
@@ -333,7 +365,10 @@ class BetterSOXDB {
       const request = store.put(preferences);
 
       request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
+      request.onerror = () =>
+        reject(
+          new Error(request.error?.message ?? "Failed to set preferences"),
+        );
     });
   }
 
@@ -369,7 +404,10 @@ class BetterSOXDB {
       const request = store.put(repository);
 
       request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
+      request.onerror = () =>
+        reject(
+          new Error(request.error?.message ?? "Failed to save repository"),
+        );
     });
   }
 
@@ -390,7 +428,10 @@ class BetterSOXDB {
             resolve();
           }
         };
-        request.onerror = () => reject(request.error);
+        request.onerror = () =>
+          reject(
+            new Error(request.error?.message ?? "Failed to save repositories"),
+          );
       });
 
       if (total === 0) resolve();
@@ -404,8 +445,10 @@ class BetterSOXDB {
       const store = transaction.objectStore(STORES.REPOSITORIES);
       const request = store.get(id);
 
-      request.onsuccess = () => resolve(request.result ?? null);
-      request.onerror = () => reject(request.error);
+      request.onsuccess = () =>
+        resolve((request.result as GitHubRepository | undefined) ?? null);
+      request.onerror = () =>
+        reject(new Error(request.error?.message ?? "Failed to get repository"));
     });
   }
 }

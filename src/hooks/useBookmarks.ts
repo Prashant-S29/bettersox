@@ -8,7 +8,7 @@ export function useBookmarks() {
 
   // Load bookmarks on mount
   useEffect(() => {
-    loadBookmarks();
+    void loadBookmarks();
   }, []);
 
   const loadBookmarks = async () => {
@@ -77,9 +77,7 @@ export function useBookmarks() {
       };
 
       await db.addBookmark(updated);
-      setBookmarks((prev) =>
-        prev.map((b) => (b.id === repoId ? updated : b)),
-      );
+      setBookmarks((prev) => prev.map((b) => (b.id === repoId ? updated : b)));
     } catch (error) {
       console.error("Error updating bookmark:", error);
       throw error;

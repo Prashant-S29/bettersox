@@ -48,7 +48,7 @@ const SearchPage: React.FC = () => {
       }
     };
 
-    loadCachedResults();
+    void loadCachedResults();
   }, [filters, query]);
 
   // Fetch repositories using tRPC (only if not using cache)
@@ -65,8 +65,8 @@ const SearchPage: React.FC = () => {
   // Cache results when they arrive
   useEffect(() => {
     if (data && filters && query) {
-      cacheSearchResults(query, filters, data.repositories, data.totalCount);
-      addToSearchHistory(query, filters);
+      void cacheSearchResults(query, filters, data.repositories, data.totalCount);
+      void addToSearchHistory(query, filters);
     }
   }, [data, filters, query]);
 

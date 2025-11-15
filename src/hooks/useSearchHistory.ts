@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import { useState, useEffect } from "react";
 import { db, type SearchHistoryItem } from "~/lib/storage";
@@ -8,7 +8,8 @@ export function useSearchHistory(limit = 10) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadHistory();
+    void loadHistory();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [limit]);
 
   const loadHistory = async () => {

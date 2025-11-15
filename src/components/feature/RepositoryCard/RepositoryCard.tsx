@@ -61,6 +61,7 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
         toast.success("Added to bookmarks");
       }
     } catch (error) {
+      console.error("Error updating bookmark:", error);
       toast.error("Failed to update bookmark");
     } finally {
       setIsBookmarkLoading(false);
@@ -107,7 +108,7 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
           size="icon-sm"
           onClick={handleBookmarkToggle}
           disabled={isBookmarkLoading}
-          className="flex-shrink-0"
+          className="shrink-0"
         >
           <BookmarkIcon
             className="h-4 w-4"
@@ -127,7 +128,7 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
       {hasMissingFilters && (
         <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/30">
           <div className="flex items-start gap-2">
-            <AlertCircleIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600 dark:text-amber-500" />
+            <AlertCircleIcon className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-500" />
             <div className="flex-1">
               <p className="mb-1 text-xs font-medium text-amber-800 dark:text-amber-400">
                 Missing some requested features:

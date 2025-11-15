@@ -129,12 +129,12 @@ export async function clearExpiredCache(): Promise<void> {
  */
 export function initCacheCleanup(): void {
   // Clear expired cache on load
-  clearExpiredCache();
+  void clearExpiredCache();
 
   // Set up periodic cleanup (every hour)
   setInterval(
     () => {
-      clearExpiredCache();
+      void clearExpiredCache();
     },
     60 * 60 * 1000,
   );
