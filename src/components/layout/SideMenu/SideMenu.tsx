@@ -96,7 +96,7 @@ export const SideMenu: React.FC = () => {
   const { history, loading } = useSearchHistoryContext();
 
   // Memoize the history splitting to prevent recalculation
-  const { recentHistory, olderHistory } = useMemo(() => {
+  const { recentHistory } = useMemo(() => {
     if (history.length === 0) {
       return { recentHistory: [], olderHistory: [] };
     }
@@ -199,9 +199,9 @@ export const SideMenu: React.FC = () => {
         )}
 
         {!loading && recentHistory.length > 0 && (
-          <SidebarGroup>
+          <SidebarGroup className="relative flex flex-col">
             <SidebarGroupLabel>Last 30 Days</SidebarGroupLabel>
-            <SidebarGroupContent>
+            <SidebarGroupContent className="relative max-h-[400px] overflow-y-scroll pb-8">
               <SidebarMenu>
                 {recentHistory.map((item) => (
                   <SidebarMenuItem key={item.id}>
@@ -215,15 +215,18 @@ export const SideMenu: React.FC = () => {
                 ))}
               </SidebarMenu>
             </SidebarGroupContent>
+            <div className="from-sidebar pointer-events-none absolute bottom-0 left-0 z-10 h-8 w-full bg-linear-to-t to-transparent" />
           </SidebarGroup>
         )}
 
-        {!loading && olderHistory.length > 0 && (
-          <SidebarGroup>
+        {/* TODO: update history; preserve only for last 30 days */}
+
+        {/* {!loading && recentHistory.length > 0 && (
+          <SidebarGroup className="relative flex flex-col">
             <SidebarGroupLabel>Older</SidebarGroupLabel>
-            <SidebarGroupContent>
+            <SidebarGroupContent className="relative max-h-[200px] overflow-y-scroll pb-8">
               <SidebarMenu>
-                {olderHistory.map((item) => (
+                {recentHistory.map((item) => (
                   <SidebarMenuItem key={item.id}>
                     <SidebarMenuButton
                       onClick={() => handleHistoryClick(item)}
@@ -235,12 +238,37 @@ export const SideMenu: React.FC = () => {
                 ))}
               </SidebarMenu>
             </SidebarGroupContent>
+
+            <div className="from-sidebar pointer-events-none absolute bottom-0 left-0 z-10 h-8 w-full bg-linear-to-t to-transparent" />
           </SidebarGroup>
-        )}
+        )} */}
       </SidebarContent>
 
       <SidebarFooter className="border-sidebar-border border-t">
         <SidebarMenu>
+          <SidebarMenuItem className="p-2">
+            <div className="bg-sidebar-accent flex w-full flex-col gap-5 rounded-lg p-2">
+              <p className="font-flagfies text-muted-foreground text-2xl">
+                DON&apos;T <br />
+                CONTRIBUTE
+                <br />
+                TO OPEN - <br />
+                SOURCE
+                <br />
+              </p>
+
+              <Link
+                href="https://www.youtube.com/watch?v=5nY_cy8zcO4"
+                target="_blank"
+                className="text-sm underline underline-offset-2"
+              >
+                Watch this Video by Theo
+              </Link>
+            </div>
+          </SidebarMenuItem>
+
+          <SidebarSeparator />
+
           <SidebarMenuItem>
             <SidebarMenuButton onClick={() => router.push("/bookmarks")}>
               <BookmarkIcon className="h-4 w-4" />

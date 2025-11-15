@@ -1,11 +1,12 @@
 import React from "react";
+import { Container } from "~/components/common";
 
 // components
 import { NLPSearchBar } from "~/components/feature";
 
 export const Hero: React.FC = () => {
   return (
-    <div className="relative flex h-screen w-full flex-col items-center justify-center gap-5">
+    <Container className="relative flex h-screen w-full flex-col items-center justify-center gap-5">
       <div className="flex flex-col gap-1 text-center">
         <p className="font-flagfies text-4xl">Welcome to BetterSox</p>
         <p className="text-muted-foreground">
@@ -22,6 +23,6 @@ export const Hero: React.FC = () => {
           mentorship and gsoc.
         </p>
       </div>
-    </div>
+    </Container>
   );
 };
