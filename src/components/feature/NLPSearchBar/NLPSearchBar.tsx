@@ -42,23 +42,34 @@ export const NLPSearchBar: React.FC = () => {
   const [parsedResult, setParsedResult] = useState<ParsedResult | null>(null);
   const [defaultLanguages, setDefaultLanguages] = useState<string[]>([]);
   const [defaultFrameworks, setDefaultFrameworks] = useState<string[]>([]);
+  const [pledgeSigned, setPledgeSigned] = useState(false);
+  const [pledgeLoading, setPledgeLoading] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Load user preferences on mount
+  // Load pledge status and user preferences on mount
   useEffect(() => {
-    const loadPreferences = async () => {
+    const loadData = async () => {
       try {
+        setPledgeLoading(true);
+
+        // Load pledge status
+        const pledgeStatus = await db.getPledgeStatus();
+        setPledgeSigned(pledgeStatus?.signed ?? false);
+
+        // Load preferences
         const prefs = await db.getPreferences();
         if (prefs) {
           setDefaultLanguages(prefs.defaultLanguages);
           setDefaultFrameworks(prefs.defaultFrameworks);
         }
       } catch (error) {
-        console.error("Error loading preferences:", error);
+        console.error("Error loading data:", error);
+      } finally {
+        setPledgeLoading(false);
       }
     };
 
-    void loadPreferences();
+    void loadData();
   }, []);
 
   const realtimeParsed = useMemo(() => {
@@ -128,6 +139,11 @@ export const NLPSearchBar: React.FC = () => {
 
     router.push(`/search?${params.toString()}`);
   }, [parsedResult, query, router]);
+
+  const handleRetry = useCallback(() => {
+    if (!query.trim()) return;
+    parseQueryMutation.mutate({ query });
+  }, [query, parseQueryMutation]);
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -343,6 +359,9 @@ export const NLPSearchBar: React.FC = () => {
     );
   }
 
+  const isDisabled =
+    !pledgeSigned || pledgeLoading || parseQueryMutation.isPending;
+
   return (
     <div className="flex w-full max-w-3xl flex-col gap-5">
       <InputGroup>
@@ -351,8 +370,14 @@ export const NLPSearchBar: React.FC = () => {
           value={query}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
-          placeholder="I am looking for an open source project..."
-          disabled={parseQueryMutation.isPending}
+          placeholder={
+            pledgeLoading
+              ? "Loading..."
+              : pledgeSigned
+                ? "I am looking for an open source project..."
+                : "Please sign the Open Source Pledge to use this tool"
+          }
+          disabled={isDisabled}
         />
 
         <InputGroupAddon
@@ -375,7 +400,7 @@ export const NLPSearchBar: React.FC = () => {
           </div>
           <InputGroupButton
             onClick={handleParse}
-            disabled={!query.trim() || parseQueryMutation.isPending}
+            disabled={isDisabled || !query.trim()}
             variant="default"
             className="rounded-full"
             size="icon-xs"
@@ -390,33 +415,61 @@ export const NLPSearchBar: React.FC = () => {
         </InputGroupAddon>
       </InputGroup>
 
-      {parseQueryMutation.isError && (
-        <div className="border-destructive bg-destructive/10 rounded-lg border p-4">
-          <p className="text-destructive text-sm">
-            Failed to parse your query. Please try again.
-          </p>
+      {!pledgeSigned && !pledgeLoading && (
+        <div className="bg-card flex items-center justify-between gap-9 rounded-lg border p-3">
+          <div>
+            <p className="text-sm font-medium">Open Source Pledge</p>
+            <p className="text-muted-foreground text-sm">
+              Please read and sign the open-source pledge before using this
+              tool.
+            </p>
+          </div>
+          <Button
+            variant="secondary"
+            size="smaller"
+            onClick={() => router.push("/open-source-pledge")}
+          >
+            Read the pledge
+          </Button>
         </div>
       )}
 
-      <div className="flex flex-col gap-2">
-        <p className="text-muted-foreground text-sm">Try an example:</p>
-        <div className="flex flex-col">
-          {exampleQueries.map((exampleQuery, index) => (
-            <div key={index}>
-              <div
-                role="button"
-                className="hover:bg-sidebar-accent cursor-pointer rounded-md px-3 py-2 text-sm"
-                onClick={() => setQuery(exampleQuery)}
-              >
-                {exampleQuery}
-              </div>
-              {index !== exampleQueries.length - 1 && (
-                <div className="bg-border my-1 h-px w-full" />
-              )}
-            </div>
-          ))}
+      {parseQueryMutation.isError && (
+        <div className="bg-card flex justify-between gap-9 rounded-lg border p-3">
+          <div>
+            <p className="text-destructive text-sm">Error in loading results</p>
+            <p className="text-muted-foreground text-sm">
+              {parseQueryMutation.error?.message ||
+                "An unexpected error occurred. Please try again."}
+            </p>
+          </div>
+          <Button variant="secondary" size="smaller" onClick={handleRetry}>
+            Try Again
+          </Button>
         </div>
-      </div>
+      )}
+
+      {pledgeSigned && (
+        <div className="flex flex-col gap-2">
+          <p className="text-muted-foreground text-sm">Try an example:</p>
+          <div className="flex flex-col">
+            {exampleQueries.map((exampleQuery, index) => (
+              <div key={index}>
+                <div
+                  role="button"
+                  className="hover:bg-sidebar-accent cursor-pointer rounded-md px-3 py-2 text-sm"
+                  onClick={() => setQuery(exampleQuery)}
+                >
+                  {exampleQuery}
+                </div>
+                {index !== exampleQueries.length - 1 && (
+                  <div className="bg-border my-1 h-px w-full" />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
