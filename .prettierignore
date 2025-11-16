@@ -1,0 +1,42 @@
+```
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Build outputs
+.next
+out
+dist
+build
+*.tsbuildinfo
+
+# Cache
+.turbo
+.cache
+.swc
+*.log
+
+# Environment files
+.env
+.env*.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Git
+.git
+.gitignore
+
+# Config files you don't want formatted
+next-env.d.ts
