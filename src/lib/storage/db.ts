@@ -1,8 +1,11 @@
 import type { GitHubRepository } from "~/lib/github/client";
+
+// types
 import type { SearchFilters } from "~/types";
+import type { UserProfile } from "./user-profile";
 
 const DB_NAME = "bettersox-db";
-const DB_VERSION = 2; // Increment version to trigger upgrade
+const DB_VERSION = 3;
 
 // Store names
 const STORES = {
@@ -12,6 +15,7 @@ const STORES = {
   BOOKMARKS: "bookmarks",
   USER_PREFERENCES: "user_preferences",
   PLEDGE_STATUS: "pledge_status",
+  USER_PROFILE: "user_profile",
 } as const;
 
 export interface CachedSearch {
@@ -124,6 +128,11 @@ class BetterSOXDB {
         // Pledge status store
         if (!db.objectStoreNames.contains(STORES.PLEDGE_STATUS)) {
           db.createObjectStore(STORES.PLEDGE_STATUS, { keyPath: "id" });
+        }
+
+        // User profile store
+        if (!db.objectStoreNames.contains(STORES.USER_PROFILE)) {
+          db.createObjectStore(STORES.USER_PROFILE, { keyPath: "id" });
         }
       };
     });
@@ -480,6 +489,127 @@ class BetterSOXDB {
           new Error(request.error?.message ?? "Failed to set pledge status"),
         );
     });
+  }
+
+  // user profile methods
+  async getUserProfile(): Promise<UserProfile | null> {
+    const db = await this.init();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(STORES.USER_PROFILE, "readonly");
+      const store = transaction.objectStore(STORES.USER_PROFILE);
+      const request = store.get("user_profile");
+
+      request.onsuccess = () =>
+        resolve((request.result as UserProfile | undefined) ?? null);
+      request.onerror = () =>
+        reject(
+          new Error(request.error?.message ?? "Failed to get user profile"),
+        );
+    });
+  }
+
+  async setUserProfile(profile: UserProfile): Promise<void> {
+    const db = await this.init();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(STORES.USER_PROFILE, "readwrite");
+      const store = transaction.objectStore(STORES.USER_PROFILE);
+      const request = store.put(profile);
+
+      request.onsuccess = () => resolve();
+      request.onerror = () =>
+        reject(
+          new Error(request.error?.message ?? "Failed to set user profile"),
+        );
+    });
+  }
+
+  async updateUserProfile(
+    updates: Partial<Omit<UserProfile, "id">>,
+  ): Promise<void> {
+    const current = await this.getUserProfile();
+
+    if (!current) {
+      // Create new profile if doesn't exist
+      const newProfile: UserProfile = {
+        id: "user_profile",
+        fullName: updates.fullName ?? "",
+        skills: updates.skills ?? [],
+        experienceLevel: updates.experienceLevel ?? "beginner",
+        workExperience: updates.workExperience ?? [],
+        education: updates.education ?? [],
+        projects: updates.projects ?? [],
+        interests: updates.interests ?? [],
+        preferredProjectTypes: updates.preferredProjectTypes ?? [],
+        preferredContributionTypes: updates.preferredContributionTypes ?? [],
+        isComplete: false,
+        lastUpdatedAt: Date.now(),
+        createdAt: Date.now(),
+        source: "manual",
+        ...updates,
+      };
+      await this.setUserProfile(newProfile);
+      return;
+    }
+
+    const updated: UserProfile = {
+      ...current,
+      ...updates,
+      lastUpdatedAt: Date.now(),
+    };
+
+    await this.setUserProfile(updated);
+  }
+
+  async deleteUserProfile(): Promise<void> {
+    const db = await this.init();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(STORES.USER_PROFILE, "readwrite");
+      const store = transaction.objectStore(STORES.USER_PROFILE);
+      const request = store.delete("user_profile");
+
+      request.onsuccess = () => resolve();
+      request.onerror = () =>
+        reject(
+          new Error(request.error?.message ?? "Failed to delete user profile"),
+        );
+    });
+  }
+
+  async checkProfileCompleteness(profile: UserProfile): Promise<{
+    isComplete: boolean;
+    missingFields: string[];
+    completionPercentage: number;
+  }> {
+    const requiredFields = {
+      fullName: profile.fullName?.trim().length > 0,
+      skills: profile.skills.length > 0,
+      experienceLevel: !!profile.experienceLevel,
+      workExperience: profile.workExperience.length > 0,
+      interests: profile.interests.length > 0,
+    };
+
+    const missingFields: string[] = [];
+    let completedCount = 0;
+    const totalFields = Object.keys(requiredFields).length;
+
+    for (const [field, isComplete] of Object.entries(requiredFields)) {
+      if (isComplete) {
+        completedCount++;
+      } else {
+        missingFields.push(field);
+      }
+    }
+
+    const completionPercentage = Math.round(
+      (completedCount / totalFields) * 100,
+    );
+    const isComplete = completionPercentage >= 80; // 80% threshold
+
+    return {
+      isComplete,
+      missingFields,
+      completionPercentage,
+    };
   }
 }
 

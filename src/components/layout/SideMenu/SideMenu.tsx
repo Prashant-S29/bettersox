@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 
 // hooks
 import { useSearchHistoryContext } from "~/contexts/SearchHistoryContext";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 // icons
 import { PlusIcon, BookmarkIcon, SettingsIcon } from "lucide-react";
@@ -25,14 +25,16 @@ import {
   SidebarSeparator,
 } from "~/components/ui/sidebar";
 import { Button } from "~/components/ui/button";
+import { Skeleton } from "~/components/ui/skeleton";
 
 // libs
 import { filtersToSearchParams } from "~/lib/nlp/utils";
+import { db } from "~/lib/storage";
+import { toast } from "sonner";
 
 // types
 import type { SearchHistoryItem } from "~/lib/storage";
 import type { SearchFilters } from "~/types";
-import { Skeleton } from "~/components/ui/skeleton";
 
 interface FilterPreset {
   id: string;
@@ -94,8 +96,28 @@ const presets: FilterPreset[] = [
 export const SideMenu: React.FC = () => {
   const router = useRouter();
   const { history, loading } = useSearchHistoryContext();
+  const [pledgeSigned, setPledgeSigned] = useState(false);
+  const [, setPledgeLoading] = useState(true);
 
-  // Memoize the history splitting to prevent recalculation
+  const pathName = usePathname();
+
+  // Load pledge status
+  useEffect(() => {
+    const loadPledgeStatus = async () => {
+      try {
+        setPledgeLoading(true);
+        const pledgeStatus = await db.getPledgeStatus();
+        setPledgeSigned(pledgeStatus?.signed ?? false);
+      } catch (error) {
+        console.error("Error loading pledge status:", error);
+      } finally {
+        setPledgeLoading(false);
+      }
+    };
+
+    void loadPledgeStatus();
+  }, []);
+
   const { recentHistory } = useMemo(() => {
     if (history.length === 0) {
       return { recentHistory: [], olderHistory: [] };
@@ -110,12 +132,32 @@ export const SideMenu: React.FC = () => {
   }, [history]);
 
   const handleHistoryClick = (item: SearchHistoryItem) => {
+    if (!pledgeSigned) {
+      toast.error("Please read and sign the Open Source Pledge first", {
+        action: {
+          label: "Read the pledge",
+          onClick: () => router.push("/open-source-pledge"),
+        },
+      });
+      return;
+    }
+
     const params = filtersToSearchParams(item.filters);
     params.set("q", item.query);
     router.push(`/search?${params.toString()}`);
   };
 
   const handlePresetClick = (preset: FilterPreset) => {
+    if (!pledgeSigned) {
+      toast.error("Please read and sign the Open Source Pledge first", {
+        action: {
+          label: "Read",
+          onClick: () => router.push("/open-source-pledge"),
+        },
+      });
+      return;
+    }
+
     const params = filtersToSearchParams(preset.filters);
     params.set("q", preset.query);
     router.push(`/search?${params.toString()}`);
@@ -155,10 +197,37 @@ export const SideMenu: React.FC = () => {
       <SidebarContent className="gap-0 whitespace-nowrap">
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenuButton onClick={() => router.push("/")}>
-              <PlusIcon />
-              New Search
+            <SidebarMenuButton asChild>
+              <Button
+                variant="default"
+                className="bg-primary text-primary-foreground hover:text-primary-foreground! hover:bg-primary/90!"
+                asChild
+              >
+                <Link href="/">
+                  <PlusIcon />
+                  New Search
+                </Link>
+              </Button>
             </SidebarMenuButton>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarSeparator />
+
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton isActive={pathName === "/match"} asChild>
+                  <Link href="/match">Find My Match </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton isActive={pathName === "/profile"} asChild>
+                  <Link href="/profile">Profile</Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
@@ -201,7 +270,7 @@ export const SideMenu: React.FC = () => {
         {!loading && recentHistory.length > 0 && (
           <SidebarGroup className="relative flex flex-col">
             <SidebarGroupLabel>Last 30 Days</SidebarGroupLabel>
-            <SidebarGroupContent className="relative max-h-[300px] overflow-y-scroll pb-12">
+            <SidebarGroupContent className="relative max-h-[200px] overflow-y-scroll pb-12">
               <SidebarMenu>
                 {recentHistory.map((item) => (
                   <SidebarMenuItem key={item.id}>
@@ -218,30 +287,6 @@ export const SideMenu: React.FC = () => {
             <div className="from-sidebar pointer-events-none absolute bottom-0 left-0 z-10 h-12 w-full bg-linear-to-t to-transparent" />
           </SidebarGroup>
         )}
-
-        {/* TODO: update history; preserve only for last 30 days */}
-
-        {/* {!loading && recentHistory.length > 0 && (
-          <SidebarGroup className="relative flex flex-col">
-            <SidebarGroupLabel>Older</SidebarGroupLabel>
-            <SidebarGroupContent className="relative max-h-[200px] overflow-y-scroll pb-8">
-              <SidebarMenu>
-                {recentHistory.map((item) => (
-                  <SidebarMenuItem key={item.id}>
-                    <SidebarMenuButton
-                      onClick={() => handleHistoryClick(item)}
-                      tooltip={item.query}
-                    >
-                      <span>{truncateText(item.query, 30)}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-
-            <div className="from-sidebar pointer-events-none absolute bottom-0 left-0 z-10 h-8 w-full bg-linear-to-t to-transparent" />
-          </SidebarGroup>
-        )} */}
       </SidebarContent>
 
       <SidebarFooter className="border-sidebar-border border-t">
@@ -270,15 +315,19 @@ export const SideMenu: React.FC = () => {
           <SidebarSeparator />
 
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={() => router.push("/bookmarks")}>
-              <BookmarkIcon className="h-4 w-4" />
-              <span>Bookmarks</span>
+            <SidebarMenuButton asChild>
+              <Link href="/bookmarks">
+                <BookmarkIcon className="h-4 w-4" />
+                Bookmarks
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={() => router.push("/settings")}>
-              <SettingsIcon className="h-4 w-4" />
-              <span>Settings</span>
+            <SidebarMenuButton asChild>
+              <Link href="/settings">
+                <SettingsIcon className="h-4 w-4" />
+                Settings
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
