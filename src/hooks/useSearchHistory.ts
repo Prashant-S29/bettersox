@@ -9,7 +9,7 @@ export function useSearchHistory(limit = 10) {
 
   useEffect(() => {
     void loadHistory();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [limit]);
 
   const loadHistory = async () => {

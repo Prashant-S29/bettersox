@@ -1,1 +1,1 @@
-export * from "./NLPSearchBar"
+export * from "./NLPSearchBar";

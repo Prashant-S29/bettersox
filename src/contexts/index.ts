@@ -1,1 +1,1 @@
-export * from "./SearchHistoryContext"
+export * from "./SearchHistoryContext";
