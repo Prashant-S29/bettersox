@@ -215,7 +215,7 @@ const SearchPage: React.FC = () => {
             <p className="text-destructive text-sm">Error in loading results</p>
             <p className="text-muted-foreground text-sm">{error.message}</p>
           </div>
-          <Button onClick={handleNewSearch} variant="secondary" size="sm">
+          <Button onClick={handleNewSearch} variant="secondary" size="smaller">
             Try Again
           </Button>
         </div>
