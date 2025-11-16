@@ -30,6 +30,7 @@ import { db } from "~/lib/storage";
 
 // tRPC
 import { api } from "~/trpc/react";
+import Link from "next/link";
 
 interface ParsedResult {
   filters: SearchFilters;
@@ -363,7 +364,7 @@ export const NLPSearchBar: React.FC = () => {
     !pledgeSigned || pledgeLoading || parseQueryMutation.isPending;
 
   return (
-    <div className="flex w-full max-w-3xl flex-col gap-5">
+    <div className="flex w-full max-w-3xl flex-col gap-8">
       <InputGroup>
         <InputGroupTextarea
           ref={textareaRef}
@@ -450,23 +451,38 @@ export const NLPSearchBar: React.FC = () => {
       )}
 
       {pledgeSigned && (
-        <div className="flex flex-col gap-2">
-          <p className="text-muted-foreground text-sm">Try an example:</p>
-          <div className="flex flex-col">
-            {exampleQueries.map((exampleQuery, index) => (
-              <div key={index}>
-                <div
-                  role="button"
-                  className="hover:bg-sidebar-accent cursor-pointer rounded-md px-3 py-2 text-sm"
-                  onClick={() => setQuery(exampleQuery)}
-                >
-                  {exampleQuery}
+        <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-2">
+            <p className="text-muted-foreground text-sm">Try an example:</p>
+            <div className="flex flex-col">
+              {exampleQueries.map((exampleQuery, index) => (
+                <div key={index}>
+                  <div
+                    role="button"
+                    className="hover:bg-sidebar-accent cursor-pointer rounded-md px-3 py-2 text-sm"
+                    onClick={() => setQuery(exampleQuery)}
+                  >
+                    {exampleQuery}
+                  </div>
+                  {index !== exampleQueries.length - 1 && (
+                    <div className="bg-border my-1 h-px w-full" />
+                  )}
                 </div>
-                {index !== exampleQueries.length - 1 && (
-                  <div className="bg-border my-1 h-px w-full" />
-                )}
-              </div>
-            ))}
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-card flex items-center justify-between gap-9 rounded-lg border p-3">
+            <div>
+              <p className="text-sm font-medium">Search using Resume</p>
+              <p className="text-muted-foreground text-sm">
+                Look for most relevant repositories simply by uploading your
+                resume.
+              </p>
+            </div>
+            <Button variant="secondary" size="smaller" asChild>
+              <Link href="/match">Search with Resume</Link>
+            </Button>
           </div>
         </div>
       )}
