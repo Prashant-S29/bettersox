@@ -275,7 +275,11 @@ const SearchPage: React.FC = () => {
           {displayData.repositories.length > 0 ? (
             <div className="space-y-4">
               {displayData.repositories.map((repo) => (
-                <RepositoryCard key={repo.id} repository={repo} />
+                <RepositoryCard
+                  key={repo.id}
+                  repository={repo}
+                  hideMissingFilters={false}
+                />
               ))}
             </div>
           ) : (

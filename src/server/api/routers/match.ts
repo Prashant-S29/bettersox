@@ -31,6 +31,13 @@ interface ScoredRepository extends GitHubRepository {
   matchReasons: string[];
   matchedTech?: string;
   matchedCategory?: string;
+  missingFilters: {
+    frameworks: string[];
+    libraries: string[];
+    contributingGuide: boolean;
+    codeOfConduct: boolean;
+    issueTemplates: boolean;
+  };
 }
 
 export const matchRouter = createTRPCRouter({
@@ -120,6 +127,8 @@ export const matchRouter = createTRPCRouter({
           input.skills,
           input.interests,
           experienceLevel,
+          frameworks,
+          libraries,
         );
 
         return {
@@ -252,18 +261,15 @@ function scoreAndRankRepositories(
   userSkills: Array<{ name: string; category: string }>,
   userInterests: string[],
   experienceLevel: "beginner" | "intermediate" | "advanced",
+  userFrameworks: string[],
+  userLibraries: string[],
 ): ScoredRepository[] {
   const userLanguages = userSkills
     .filter((s) => s.category === "programming_language")
     .map((s) => s.name.toLowerCase());
 
-  const userFrameworks = userSkills
-    .filter((s) => s.category === "framework")
-    .map((s) => s.name.toLowerCase());
-
-  const userLibraries = userSkills
-    .filter((s) => s.category === "library")
-    .map((s) => s.name.toLowerCase());
+  const userFrameworksLower = userFrameworks.map((f) => f.toLowerCase());
+  const userLibrariesLower = userLibraries.map((l) => l.toLowerCase());
 
   const userTechnologies = userSkills.map((s) => s.name.toLowerCase());
   const normalizedInterests = userInterests.map((i) => i.toLowerCase());
@@ -299,7 +305,7 @@ function scoreAndRankRepositories(
       repo.repositoryTopics?.forEach((topicName) => {
         const normalizedTopic = topicName.toLowerCase();
 
-        if (userFrameworks.includes(normalizedTopic)) {
+        if (userFrameworksLower.includes(normalizedTopic)) {
           score += 30;
           frameworkMatches++;
           if (frameworkMatches <= 2) {
@@ -313,7 +319,7 @@ function scoreAndRankRepositories(
       repo.repositoryTopics?.forEach((topicName) => {
         const normalizedTopic = topicName.toLowerCase();
 
-        if (userLibraries.includes(normalizedTopic)) {
+        if (userLibrariesLower.includes(normalizedTopic)) {
           score += 25;
           libraryMatches++;
           if (libraryMatches <= 2) {
@@ -346,8 +352,8 @@ function scoreAndRankRepositories(
             tech.includes(normalizedTopic)
           ) {
             if (
-              !userFrameworks.includes(normalizedTopic) &&
-              !userLibraries.includes(normalizedTopic)
+              !userFrameworksLower.includes(normalizedTopic) &&
+              !userLibrariesLower.includes(normalizedTopic)
             ) {
               score += 10;
             }
@@ -369,8 +375,6 @@ function scoreAndRankRepositories(
           score += 15;
           matchReasons.push("Has code of conduct");
         }
-        // Note: contributorCount is not available in GitHubRepository type
-        // You may need to add this field or remove this check
       } else if (experienceLevel === "intermediate") {
         if (repo.hasGoodFirstIssues) {
           score += 20;
@@ -419,10 +423,32 @@ function scoreAndRankRepositories(
         score += 15;
       }
 
+      // Calculate missing filters
+      const missingFrameworks = userFrameworks.filter(
+        (fw) =>
+          !repo.repositoryTopics?.some(
+            (topic) => topic.toLowerCase() === fw.toLowerCase(),
+          ),
+      );
+
+      const missingLibraries = userLibraries.filter(
+        (lib) =>
+          !repo.repositoryTopics?.some(
+            (topic) => topic.toLowerCase() === lib.toLowerCase(),
+          ),
+      );
+
       return {
         ...repo,
         matchScore: score,
         matchReasons: matchReasons.slice(0, 5), // Top 5 reasons
+        missingFilters: {
+          frameworks: missingFrameworks,
+          libraries: missingLibraries,
+          contributingGuide: !repo.hasContributingFile,
+          codeOfConduct: !repo.hasCodeOfConduct,
+          issueTemplates: !repo.hasIssueTemplate,
+        },
       };
     })
     .sort((a, b) => b.matchScore - a.matchScore);
