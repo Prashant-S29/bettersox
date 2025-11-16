@@ -4,7 +4,7 @@ import { searchRouter } from "./routers/search";
 
 export const appRouter = createTRPCRouter({
   query: queryRouter,
-   search: searchRouter,
+  search: searchRouter,
 });
 
 export type AppRouter = typeof appRouter;

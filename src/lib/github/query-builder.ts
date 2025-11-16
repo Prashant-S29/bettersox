@@ -1,6 +1,8 @@
 import type { SearchFilters } from "~/types";
 
-export function buildGitHubSearchQuery(filters: Partial<SearchFilters>): string {
+export function buildGitHubSearchQuery(
+  filters: Partial<SearchFilters>,
+): string {
   const queryParts: string[] = [];
 
   // Languages
@@ -113,7 +115,8 @@ export function buildGitHubSearchQuery(filters: Partial<SearchFilters>): string 
   queryParts.push("archived:false");
 
   // If no query parts, search for all repos
-  if (queryParts.length === 2) { // Only has is:public and archived:false
+  if (queryParts.length === 2) {
+    // Only has is:public and archived:false
     queryParts.push("stars:>100");
   }
 

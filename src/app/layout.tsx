@@ -25,7 +25,7 @@ export default function RootLayout({
     <html lang="en" className={`${geist.variable}`}>
       <body>
         <Provider>
-          <Toaster   />
+          <Toaster />
           {/* <Header /> */}
           <SideMenu />
           <main className="w-full">

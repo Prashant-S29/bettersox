@@ -219,7 +219,7 @@ const SettingsPage: React.FC = () => {
 
         {/* Default Filters */}
         <section>
-          <h2 className=" text-xl font-semibold">Default Filters</h2>
+          <h2 className="text-xl font-semibold">Default Filters</h2>
           <p className="text-muted-foreground mb-4 text-sm">
             Set default languages and frameworks to prefill in searches
           </p>

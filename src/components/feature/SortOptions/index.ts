@@ -1,1 +1,1 @@
-export * from "./SortOptions"
+export * from "./SortOptions";

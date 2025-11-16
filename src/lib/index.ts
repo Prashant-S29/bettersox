@@ -1,1 +1,1 @@
-export * from './nlp'
+export * from "./nlp";
