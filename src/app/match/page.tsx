@@ -18,34 +18,27 @@ import { RepositoryCard } from "~/components/feature";
 import { db, type UserProfile } from "~/lib/storage";
 import { api } from "~/trpc/react";
 
-// types
-import type { SearchFilters } from "~/types";
-
 const MatchPage: React.FC = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [searchFilters, setSearchFilters] = useState<SearchFilters | null>(
-    null,
-  );
 
-  const {
-    data: searchResults,
-    isLoading: searching,
-    refetch,
-  } = api.search.repositories.useQuery(
-    {
-      filters: searchFilters!,
-      perPage: 20,
-    },
-    {
-      enabled: !!searchFilters,
-    },
-  );
+  // Use the match endpoint instead of search
+  const { data: matchResults, isLoading: searching } =
+    api.match.findMatches.useQuery(
+      {
+        skills: profile?.skills ?? [],
+        experienceLevel: profile?.experienceLevel ?? "beginner",
+        interests: profile?.interests ?? [],
+        yearsOfExperience: profile?.yearsOfExperience ?? null,
+      },
+      {
+        enabled: !!profile && profile.isComplete,
+      },
+    );
 
   useEffect(() => {
     void loadProfile();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadProfile = async () => {
@@ -53,11 +46,6 @@ const MatchPage: React.FC = () => {
       setLoading(true);
       const userProfile = await db.getUserProfile();
       setProfile(userProfile);
-
-      if (userProfile?.isComplete) {
-        const filters = buildFiltersFromProfile(userProfile);
-        setSearchFilters(filters);
-      }
     } catch (error) {
       console.error("Error loading profile:", error);
       toast.error("Failed to load profile");
@@ -66,88 +54,12 @@ const MatchPage: React.FC = () => {
     }
   };
 
-  const buildFiltersFromProfile = (profile: UserProfile): SearchFilters => {
-    const languages = profile.skills
-      .filter((s) => s.category === "programming_language")
-      .map((s) => s.name);
-
-    const frameworks = profile.skills
-      .filter((s) => s.category === "framework")
-      .map((s) => s.name);
-
-    const libraries = profile.skills
-      .filter((s) => s.category === "library")
-      .map((s) => s.name);
-
-    const experienceLevel =
-      profile.experienceLevel === "expert"
-        ? "advanced"
-        : (profile.experienceLevel ?? "beginner");
-
-    const hasGoodFirstIssues = experienceLevel === "beginner";
-    const hasContributingGuide = true;
-    const hasCodeOfConduct = true;
-    const isWelcoming = experienceLevel === "beginner";
-
-    let minStars = 100;
-    let maxStars: number | null = null;
-
-    if (experienceLevel === "beginner") {
-      minStars = 50;
-      maxStars = 5000;
-    } else if (experienceLevel === "intermediate") {
-      minStars = 500;
-      maxStars = 20000;
-    } else if (experienceLevel === "advanced") {
-      minStars = 1000;
-      maxStars = null;
-    }
-
-    return {
-      languages: languages.slice(0, 3),
-      frameworks: frameworks.slice(0, 3),
-      libraries: libraries.slice(0, 2),
-      experienceLevel,
-      yearsOfExperience: profile.yearsOfExperience ?? null,
-      projectAge: null,
-      competitionLevel: experienceLevel === "beginner" ? "low" : null,
-      activityLevel: "active",
-      minStars,
-      maxStars,
-      minForks: null,
-      maxForks: null,
-      minContributors: null,
-      maxContributors: experienceLevel === "beginner" ? 50 : null,
-      hasGoodFirstIssues,
-      hasHelpWanted: false,
-      minOpenIssues: null,
-      issueTypes: [],
-      maintainerResponsiveness: "any",
-      hasMentor: experienceLevel === "beginner",
-      hasContributingGuide,
-      hasCodeOfConduct,
-      hasIssueTemplates: false,
-      isWelcoming,
-      topics: profile.interests,
-      licenses: [],
-      lastPushedWithin: "90days",
-    };
-  };
-
-  const handleRefresh = async () => {
-    if (profile) {
-      // const filters = buildFiltersFromProfile(profile);
-      // setSearchFilters(filters);
-      await refetch();
-      toast.info("Refreshing matches...");
-    }
-  };
-
+  // Show success toast when matches are found
   useEffect(() => {
-    if (searchResults && searchFilters) {
-      toast.success(`Found ${searchResults.totalCount} matching repositories!`);
+    if (matchResults && matchResults.totalCount > 0) {
+      toast.success(matchResults.message);
     }
-  }, [searchResults, searchFilters]);
+  }, [matchResults]);
 
   if (loading) {
     return (
@@ -190,7 +102,7 @@ const MatchPage: React.FC = () => {
         <div>
           <h1 className="text-lg font-semibold">Your Matches</h1>
           <p className="text-muted-foreground text-sm">
-            Repositories that match your skills and experience
+            Repositories ranked by relevance to your profile
           </p>
         </div>
         <div className="flex gap-2">
@@ -201,18 +113,10 @@ const MatchPage: React.FC = () => {
           >
             Edit Profile
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            loading={searching}
-            disabled={searching}
-          >
-            {searching ? "Searching..." : "Refresh"}
-          </Button>
         </div>
       </div>
 
+      {/* Profile Summary */}
       <div className="bg-card rounded-lg border p-6">
         <div className="mb-4 flex items-start justify-between">
           <div>
@@ -245,6 +149,7 @@ const MatchPage: React.FC = () => {
         )}
       </div>
 
+      {/* Matches */}
       {searching ? (
         <div className="flex flex-col gap-3">
           {Array.from({ length: 5 }).map((_, index) => (
@@ -254,13 +159,17 @@ const MatchPage: React.FC = () => {
             />
           ))}
         </div>
-      ) : searchResults && searchResults.repositories.length > 0 ? (
+      ) : matchResults && matchResults.repositories.length > 0 ? (
         <div className="space-y-4">
-          <p className="text-muted-foreground text-sm">
-            Found {searchResults.totalCount} matching repositories
-          </p>
-          {searchResults.repositories.map((repo) => (
-            <RepositoryCard key={repo.id} repository={repo} />
+          <div className="flex items-center justify-between">
+            <p className="text-muted-foreground text-sm">
+              {matchResults.totalCount} repositories matched (showing top 50)
+            </p>
+          </div>
+          {matchResults.repositories.map((repo) => (
+            <div key={repo.id} className="space-y-2">
+              <RepositoryCard repository={repo} hideMissingFilters />
+            </div>
           ))}
         </div>
       ) : (
@@ -269,7 +178,7 @@ const MatchPage: React.FC = () => {
           <div>
             <p className="text-lg font-semibold">No matches found</p>
             <p className="text-muted-foreground text-sm">
-              Try updating your profile or adjusting your preferences
+              Try updating your profile with more skills
             </p>
           </div>
           <Button variant="outline" onClick={() => router.push("/profile")}>

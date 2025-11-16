@@ -32,10 +32,12 @@ import { toast } from "sonner";
 
 interface RepositoryCardProps {
   repository: EnrichedRepository;
+  hideMissingFilters?: boolean;
 }
 
 export const RepositoryCard: React.FC<RepositoryCardProps> = ({
   repository,
+  hideMissingFilters,
 }) => {
   const { isBookmarked, addBookmark, removeBookmark } = useBookmarks();
   const [isBookmarkLoading, setIsBookmarkLoading] = useState(false);
@@ -161,7 +163,7 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
         </p>
       )}
 
-      {showMissingFilters && hasMissingFilters && (
+      {!hideMissingFilters && showMissingFilters && hasMissingFilters && (
         <div className="bg-sidebar-accent/50 mb-4 rounded-md border p-3">
           <div className="flex w-full items-center justify-between">
             <div className="flex items-center gap-2">
