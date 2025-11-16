@@ -206,7 +206,7 @@ const SearchPage: React.FC = () => {
       <div className="flex flex-col gap-5">
         <div className="flex justify-between">
           <div>
-            <h1 className="text-2xl font-semibold">Search Results</h1>
+            <h1 className="text-lg font-semibold">Search Results</h1>
             {query && (
               <p className="text-muted-foreground mt-1 text-sm">
                 <span className="font-medium">{query}</span>
