@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 // icons
 import { Loader2Icon } from "lucide-react";
@@ -17,6 +17,9 @@ import Link from "next/link";
 
 const OpenSourcePledgePage: React.FC = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirectTo");
+
   const [loading, setLoading] = useState(true);
   const [pledgeStatus, setPledgeStatus] = useState<PledgeStatus | null>(null);
   const [name, setName] = useState("");
@@ -64,11 +67,28 @@ const OpenSourcePledgePage: React.FC = () => {
       await db.setPledgeStatus(pledge);
       setPledgeStatus(pledge);
       toast.success("Pledge signed successfully!");
+
+      // Redirect to the original page or home
+      setTimeout(() => {
+        if (redirectTo) {
+          router.push(redirectTo);
+        } else {
+          router.push("/");
+        }
+      }, 1000);
     } catch (error) {
       console.error("Error signing pledge:", error);
       toast.error("Failed to sign pledge");
     } finally {
       setSigning(false);
+    }
+  };
+
+  const handleNavigate = () => {
+    if (redirectTo) {
+      router.push(redirectTo);
+    } else {
+      router.push("/");
     }
   };
 
@@ -79,29 +99,6 @@ const OpenSourcePledgePage: React.FC = () => {
       </Container>
     );
   }
-
-  //   if (pledgeStatus?.signed) {
-  //     return (
-  //       <Container className="flex min-h-screen items-center justify-center">
-  //         <div className="w-full max-w-2xl space-y-6 text-center">
-  //           <CheckCircleIcon className="text-primary mx-auto h-16 w-16" />
-  //           <div>
-  //             <h1 className="mb-2 text-3xl font-bold">Pledge Signed!</h1>
-  //             <p className="text-muted-foreground text-lg">
-  //               Great, {pledgeStatus.name}! You have agreed and signed your
-  //               pledge.
-  //             </p>
-  //           </div>
-  //           <p className="text-primary text-xl font-semibold">
-  //             Happy open source journey!
-  //           </p>
-  //           <Button onClick={() => router.push("/")} size="lg">
-  //             Start Searching
-  //           </Button>
-  //         </div>
-  //       </Container>
-  //     );
-  //   }
 
   return (
     <Container className="flex flex-col gap-6">
@@ -173,14 +170,8 @@ const OpenSourcePledgePage: React.FC = () => {
             have signed your open-source pledge.
           </p>
 
-          <Button
-            onClick={() => {
-              router.push("/");
-            }}
-            size="smaller"
-            variant="outline"
-          >
-            New Search
+          <Button onClick={handleNavigate} size="smaller" variant="outline">
+            {redirectTo ? "Continue" : "New Search"}
           </Button>
         </div>
       ) : (
@@ -195,7 +186,7 @@ const OpenSourcePledgePage: React.FC = () => {
           />
           , hereby declare that I have read and fully understood the Open Source
           Pledge. I agree to abide by all the principles stated above.
-          <div className="flex justify-end gap-3">
+          <div className="mt-4 flex justify-end gap-3">
             <Button
               onClick={() => router.push("/")}
               variant="outline"

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 
 // hooks
@@ -25,14 +25,16 @@ import {
   SidebarSeparator,
 } from "~/components/ui/sidebar";
 import { Button } from "~/components/ui/button";
+import { Skeleton } from "~/components/ui/skeleton";
 
 // libs
 import { filtersToSearchParams } from "~/lib/nlp/utils";
+import { db } from "~/lib/storage";
+import { toast } from "sonner";
 
 // types
 import type { SearchHistoryItem } from "~/lib/storage";
 import type { SearchFilters } from "~/types";
-import { Skeleton } from "~/components/ui/skeleton";
 
 interface FilterPreset {
   id: string;
@@ -94,6 +96,25 @@ const presets: FilterPreset[] = [
 export const SideMenu: React.FC = () => {
   const router = useRouter();
   const { history, loading } = useSearchHistoryContext();
+  const [pledgeSigned, setPledgeSigned] = useState(false);
+  const [, setPledgeLoading] = useState(true);
+
+  // Load pledge status
+  useEffect(() => {
+    const loadPledgeStatus = async () => {
+      try {
+        setPledgeLoading(true);
+        const pledgeStatus = await db.getPledgeStatus();
+        setPledgeSigned(pledgeStatus?.signed ?? false);
+      } catch (error) {
+        console.error("Error loading pledge status:", error);
+      } finally {
+        setPledgeLoading(false);
+      }
+    };
+
+    void loadPledgeStatus();
+  }, []);
 
   // Memoize the history splitting to prevent recalculation
   const { recentHistory } = useMemo(() => {
@@ -110,12 +131,32 @@ export const SideMenu: React.FC = () => {
   }, [history]);
 
   const handleHistoryClick = (item: SearchHistoryItem) => {
+    if (!pledgeSigned) {
+      toast.error("Please read and sign the Open Source Pledge first", {
+        action: {
+          label: "Read the pledge",
+          onClick: () => router.push("/open-source-pledge"),
+        },
+      });
+      return;
+    }
+
     const params = filtersToSearchParams(item.filters);
     params.set("q", item.query);
     router.push(`/search?${params.toString()}`);
   };
 
   const handlePresetClick = (preset: FilterPreset) => {
+    if (!pledgeSigned) {
+      toast.error("Please read and sign the Open Source Pledge first", {
+        action: {
+          label: "Read the pledge",
+          onClick: () => router.push("/open-source-pledge"),
+        },
+      });
+      return;
+    }
+
     const params = filtersToSearchParams(preset.filters);
     params.set("q", preset.query);
     router.push(`/search?${params.toString()}`);
@@ -218,30 +259,6 @@ export const SideMenu: React.FC = () => {
             <div className="from-sidebar pointer-events-none absolute bottom-0 left-0 z-10 h-12 w-full bg-linear-to-t to-transparent" />
           </SidebarGroup>
         )}
-
-        {/* TODO: update history; preserve only for last 30 days */}
-
-        {/* {!loading && recentHistory.length > 0 && (
-          <SidebarGroup className="relative flex flex-col">
-            <SidebarGroupLabel>Older</SidebarGroupLabel>
-            <SidebarGroupContent className="relative max-h-[200px] overflow-y-scroll pb-8">
-              <SidebarMenu>
-                {recentHistory.map((item) => (
-                  <SidebarMenuItem key={item.id}>
-                    <SidebarMenuButton
-                      onClick={() => handleHistoryClick(item)}
-                      tooltip={item.query}
-                    >
-                      <span>{truncateText(item.query, 30)}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-
-            <div className="from-sidebar pointer-events-none absolute bottom-0 left-0 z-10 h-8 w-full bg-linear-to-t to-transparent" />
-          </SidebarGroup>
-        )} */}
       </SidebarContent>
 
       <SidebarFooter className="border-sidebar-border border-t">

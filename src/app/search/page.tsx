@@ -47,21 +47,33 @@ const SearchPage: React.FC = () => {
     totalCount: number;
   } | null>(null);
   const [usingCache, setUsingCache] = useState(false);
+  const [pledgeSigned, setPledgeSigned] = useState(false);
+  const [pledgeLoading, setPledgeLoading] = useState(true);
 
+  // Load pledge status and preferences
   useEffect(() => {
-    const loadPreferences = async () => {
+    const loadData = async () => {
       try {
+        setPledgeLoading(true);
+
+        // Load pledge status
+        const pledgeStatus = await db.getPledgeStatus();
+        setPledgeSigned(pledgeStatus?.signed ?? false);
+
+        // Load preferences
         const prefs = await db.getPreferences();
         if (prefs) {
           setSortBy(prefs.sortBy);
           setResultsPerPage(prefs.resultsPerPage);
         }
       } catch (error) {
-        console.error("Error loading preferences:", error);
+        console.error("Error loading data:", error);
+      } finally {
+        setPledgeLoading(false);
       }
     };
 
-    void loadPreferences();
+    void loadData();
   }, []);
 
   useEffect(() => {
@@ -93,7 +105,7 @@ const SearchPage: React.FC = () => {
       perPage: resultsPerPage,
     },
     {
-      enabled: !!filters && !usingCache,
+      enabled: !!filters && !usingCache && pledgeSigned,
     },
   );
 
@@ -124,11 +136,40 @@ const SearchPage: React.FC = () => {
     setCachedResults(null);
   };
 
-  if (!filters) {
+  const handleReadPledge = () => {
+    // Get current URL path with search params
+    const currentPath = window.location.pathname + window.location.search;
+    const encodedPath = encodeURIComponent(currentPath);
+    router.push(`/open-source-pledge?redirectTo=${encodedPath}`);
+  };
+
+  if (pledgeLoading || !filters) {
     return (
       <div className="container mx-auto flex min-h-screen items-center justify-center py-8">
         <Loader2Icon className="text-primary h-8 w-8 animate-spin" />
       </div>
+    );
+  }
+
+  // Show pledge requirement if not signed
+  if (!pledgeSigned) {
+    return (
+      <Container className="flex min-h-screen items-center justify-center">
+        <div className="w-full max-w-2xl">
+          <div className="bg-card flex items-center justify-between gap-9 rounded-lg border p-6">
+            <div>
+              <p className="text-sm font-medium">Open Source Pledge</p>
+              <p className="text-muted-foreground text-sm">
+                Please read and sign the open-source pledge before using this
+                tool.
+              </p>
+            </div>
+            <Button variant="secondary" size="sm" onClick={handleReadPledge}>
+              Read the pledge
+            </Button>
+          </div>
+        </div>
+      </Container>
     );
   }
 
