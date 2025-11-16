@@ -5,7 +5,7 @@ import Link from "next/link";
 
 // hooks
 import { useSearchHistoryContext } from "~/contexts/SearchHistoryContext";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 // icons
 import { PlusIcon, BookmarkIcon, SettingsIcon } from "lucide-react";
@@ -99,6 +99,8 @@ export const SideMenu: React.FC = () => {
   const [pledgeSigned, setPledgeSigned] = useState(false);
   const [, setPledgeLoading] = useState(true);
 
+  const pathName = usePathname();
+
   // Load pledge status
   useEffect(() => {
     const loadPledgeStatus = async () => {
@@ -116,7 +118,6 @@ export const SideMenu: React.FC = () => {
     void loadPledgeStatus();
   }, []);
 
-  // Memoize the history splitting to prevent recalculation
   const { recentHistory } = useMemo(() => {
     if (history.length === 0) {
       return { recentHistory: [], olderHistory: [] };
@@ -150,7 +151,7 @@ export const SideMenu: React.FC = () => {
     if (!pledgeSigned) {
       toast.error("Please read and sign the Open Source Pledge first", {
         action: {
-          label: "Read the pledge",
+          label: "Read",
           onClick: () => router.push("/open-source-pledge"),
         },
       });
@@ -196,10 +197,37 @@ export const SideMenu: React.FC = () => {
       <SidebarContent className="gap-0 whitespace-nowrap">
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenuButton onClick={() => router.push("/")}>
-              <PlusIcon />
-              New Search
+            <SidebarMenuButton asChild>
+              <Button
+                variant="default"
+                className="bg-primary text-primary-foreground hover:text-primary-foreground! hover:bg-primary/90!"
+                asChild
+              >
+                <Link href="/">
+                  <PlusIcon />
+                  New Search
+                </Link>
+              </Button>
             </SidebarMenuButton>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarSeparator />
+
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton isActive={pathName === "/match"} asChild>
+                  <Link href="/match">Find My Match </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton isActive={pathName === "/profile"} asChild>
+                  <Link href="/profile">Profile</Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
@@ -242,7 +270,7 @@ export const SideMenu: React.FC = () => {
         {!loading && recentHistory.length > 0 && (
           <SidebarGroup className="relative flex flex-col">
             <SidebarGroupLabel>Last 30 Days</SidebarGroupLabel>
-            <SidebarGroupContent className="relative max-h-[300px] overflow-y-scroll pb-12">
+            <SidebarGroupContent className="relative max-h-[200px] overflow-y-scroll pb-12">
               <SidebarMenu>
                 {recentHistory.map((item) => (
                   <SidebarMenuItem key={item.id}>
@@ -287,15 +315,19 @@ export const SideMenu: React.FC = () => {
           <SidebarSeparator />
 
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={() => router.push("/bookmarks")}>
-              <BookmarkIcon className="h-4 w-4" />
-              <span>Bookmarks</span>
+            <SidebarMenuButton asChild>
+              <Link href="/bookmarks">
+                <BookmarkIcon className="h-4 w-4" />
+                Bookmarks
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={() => router.push("/settings")}>
-              <SettingsIcon className="h-4 w-4" />
-              <span>Settings</span>
+            <SidebarMenuButton asChild>
+              <Link href="/settings">
+                <SettingsIcon className="h-4 w-4" />
+                Settings
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
