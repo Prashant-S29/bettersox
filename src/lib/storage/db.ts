@@ -2,7 +2,7 @@ import type { GitHubRepository } from "~/lib/github/client";
 import type { SearchFilters } from "~/types";
 
 const DB_NAME = "bettersox-db";
-const DB_VERSION = 1;
+const DB_VERSION = 2; // Increment version to trigger upgrade
 
 // Store names
 const STORES = {
@@ -11,10 +11,11 @@ const STORES = {
   SEARCH_HISTORY: "search_history",
   BOOKMARKS: "bookmarks",
   USER_PREFERENCES: "user_preferences",
+  PLEDGE_STATUS: "pledge_status",
 } as const;
 
 export interface CachedSearch {
-  id: string; // Hash of search query + filters
+  id: string;
   query: string;
   filters: SearchFilters;
   results: GitHubRepository[];
@@ -31,7 +32,7 @@ export interface SearchHistoryItem {
 }
 
 export interface Bookmark {
-  id: string; // Repository ID
+  id: string;
   repository: GitHubRepository;
   notes?: string;
   tags: string[];
@@ -39,13 +40,20 @@ export interface Bookmark {
 }
 
 export interface UserPreferences {
-  id: "preferences"; // Singleton
+  id: "preferences";
   theme: "light" | "dark" | "system";
   defaultLanguages: string[];
   defaultFrameworks: string[];
   sortBy: "stars" | "forks" | "updated" | "created";
   resultsPerPage: number;
   showMissingFilters: boolean;
+}
+
+export interface PledgeStatus {
+  id: "pledge";
+  name: string;
+  signed: boolean;
+  signedAt: number;
 }
 
 class BetterSOXDB {
@@ -112,16 +120,18 @@ class BetterSOXDB {
         if (!db.objectStoreNames.contains(STORES.USER_PREFERENCES)) {
           db.createObjectStore(STORES.USER_PREFERENCES, { keyPath: "id" });
         }
+
+        // Pledge status store
+        if (!db.objectStoreNames.contains(STORES.PLEDGE_STATUS)) {
+          db.createObjectStore(STORES.PLEDGE_STATUS, { keyPath: "id" });
+        }
       };
     });
 
     return this.initPromise;
   }
 
-  // ============================================================================
-  // SEARCH CACHE METHODS
-  // ============================================================================
-
+  // cache methods
   async getCachedSearch(searchId: string): Promise<CachedSearch | null> {
     const db = await this.init();
     return new Promise((resolve, reject) => {
@@ -203,10 +213,7 @@ class BetterSOXDB {
     });
   }
 
-  // ============================================================================
-  // SEARCH HISTORY METHODS
-  // ============================================================================
-
+  // search history methods
   async addSearchHistory(item: SearchHistoryItem): Promise<void> {
     const db = await this.init();
     return new Promise((resolve, reject) => {
@@ -264,10 +271,7 @@ class BetterSOXDB {
     });
   }
 
-  // ============================================================================
-  // BOOKMARKS METHODS
-  // ============================================================================
-
+  // bookmarks methods
   async addBookmark(bookmark: Bookmark): Promise<void> {
     const db = await this.init();
     return new Promise((resolve, reject) => {
@@ -337,10 +341,7 @@ class BetterSOXDB {
     });
   }
 
-  // ============================================================================
-  // USER PREFERENCES METHODS
-  // ============================================================================
-
+  // user preferences methods
   async getPreferences(): Promise<UserPreferences | null> {
     const db = await this.init();
     return new Promise((resolve, reject) => {
@@ -392,10 +393,7 @@ class BetterSOXDB {
     await this.setPreferences(updated);
   }
 
-  // ============================================================================
-  // REPOSITORIES METHODS (for offline access)
-  // ============================================================================
-
+  // repository methods (for offline access)
   async saveRepository(repository: GitHubRepository): Promise<void> {
     const db = await this.init();
     return new Promise((resolve, reject) => {
@@ -449,6 +447,38 @@ class BetterSOXDB {
         resolve((request.result as GitHubRepository | undefined) ?? null);
       request.onerror = () =>
         reject(new Error(request.error?.message ?? "Failed to get repository"));
+    });
+  }
+
+  // pledge methods
+  async getPledgeStatus(): Promise<PledgeStatus | null> {
+    const db = await this.init();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(STORES.PLEDGE_STATUS, "readonly");
+      const store = transaction.objectStore(STORES.PLEDGE_STATUS);
+      const request = store.get("pledge");
+
+      request.onsuccess = () =>
+        resolve((request.result as PledgeStatus | undefined) ?? null);
+      request.onerror = () =>
+        reject(
+          new Error(request.error?.message ?? "Failed to get pledge status"),
+        );
+    });
+  }
+
+  async setPledgeStatus(pledge: PledgeStatus): Promise<void> {
+    const db = await this.init();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(STORES.PLEDGE_STATUS, "readwrite");
+      const store = transaction.objectStore(STORES.PLEDGE_STATUS);
+      const request = store.put(pledge);
+
+      request.onsuccess = () => resolve();
+      request.onerror = () =>
+        reject(
+          new Error(request.error?.message ?? "Failed to set pledge status"),
+        );
     });
   }
 }
