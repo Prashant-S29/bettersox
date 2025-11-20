@@ -1,8 +1,9 @@
 import { z } from "zod";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter } from "~/server/api/trpc";
 import { env } from "~/env";
 import { SearchFiltersSchema, type SearchFiltersSchemaType } from "~/schema";
+import { publicProcedure } from "../procedure";
 
 const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
 
