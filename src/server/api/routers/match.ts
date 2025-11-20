@@ -1,7 +1,8 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter } from "~/server/api/trpc";
 import { buildGitHubSearchQuery } from "~/lib/github/query-builder";
 import { githubClient, type GitHubRepository } from "~/lib/github/client";
+import { publicProcedure } from "../procedure";
 
 const UserProfileSkillSchema = z.object({
   name: z.string(),
