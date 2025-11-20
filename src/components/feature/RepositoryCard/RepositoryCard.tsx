@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 
 // types
-import type { EnrichedRepository } from "~/server/api/routers/search";
+import type { EnrichedRepository } from "~/types/github";
 
 // hooks
 import { useBookmarks } from "~/hooks";

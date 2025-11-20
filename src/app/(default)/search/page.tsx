@@ -21,7 +21,7 @@ import {
 
 // types
 import type { SearchFilters } from "~/types";
-import type { EnrichedRepository } from "~/server/api/routers/search";
+import type { EnrichedRepository } from "~/types/github";
 
 // components
 import {
@@ -99,7 +99,11 @@ const SearchPage: React.FC = () => {
     void loadCachedResults();
   }, [filters, query]);
 
-  const { data, isLoading, error } = api.search.repositories.useQuery(
+  const {
+    data: repositories,
+    isLoading,
+    error,
+  } = api.search.repositories.useQuery(
     {
       filters: filters!,
       perPage: resultsPerPage,
@@ -110,18 +114,18 @@ const SearchPage: React.FC = () => {
   );
 
   useEffect(() => {
-    if (data && filters && query) {
+    if (repositories?.data && filters && query) {
       void cacheSearchResults(
         query,
         filters,
-        data.repositories,
-        data.totalCount,
+        repositories.data.repositories,
+        repositories.data.totalCount,
       );
       void addToSearchHistory(query, filters).then(() => {
         void refreshHistory();
       });
     }
-  }, [data, filters, query, refreshHistory]);
+  }, [filters, query, refreshHistory, repositories?.data]);
 
   const handleClearFilters = () => {
     router.push("/");
@@ -173,7 +177,7 @@ const SearchPage: React.FC = () => {
     );
   }
 
-  let displayData = usingCache ? cachedResults : data;
+  let displayData = usingCache ? cachedResults : repositories?.data;
 
   if (displayData) {
     const sorted = [...displayData.repositories].sort((a, b) => {

@@ -1,4 +1,4 @@
-import type { GitHubRepository } from "~/lib/github/client";
+import type { GitHubRepository } from "~/types/github";
 
 // types
 import type { SearchFilters } from "~/types";

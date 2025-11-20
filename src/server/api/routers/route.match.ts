@@ -1,52 +1,22 @@
-import { z } from "zod";
 import { createTRPCRouter } from "~/server/api/trpc";
+
+// libs
 import { buildGitHubSearchQuery } from "~/lib/github/query-builder";
-import { githubClient, type GitHubRepository } from "~/lib/github/client";
+import { searchRepositories } from "~/lib/github/queries";
+
+// types
+import type { GitHubRepository, ScoredRepository } from "~/types/github";
+
+// procedure
 import { publicProcedure } from "../procedure";
-
-const UserProfileSkillSchema = z.object({
-  name: z.string(),
-  category: z.enum([
-    "programming_language",
-    "framework",
-    "library",
-    "tool",
-    "database",
-    "cloud",
-    "devops",
-    "design",
-    "soft_skill",
-    "other",
-  ]),
-});
-
-const MatchInputSchema = z.object({
-  skills: z.array(UserProfileSkillSchema),
-  experienceLevel: z.enum(["beginner", "intermediate", "advanced", "expert"]),
-  interests: z.array(z.string()),
-  yearsOfExperience: z.number().nullable().optional(),
-});
-
-interface ScoredRepository extends GitHubRepository {
-  matchScore: number;
-  matchReasons: string[];
-  matchedTech?: string;
-  matchedCategory?: string;
-  missingFilters: {
-    frameworks: string[];
-    libraries: string[];
-    contributingGuide: boolean;
-    codeOfConduct: boolean;
-    issueTemplates: boolean;
-  };
-}
+import { MatchInputSchema } from "~/schema";
 
 export const matchRouter = createTRPCRouter({
   findMatches: publicProcedure
     .input(MatchInputSchema)
     .query(async ({ input }) => {
       try {
-        // Extract technologies by category
+        // extract technologies by category
         const languages = input.skills
           .filter((s) => s.category === "programming_language")
           .map((s) => s.name);
@@ -63,25 +33,28 @@ export const matchRouter = createTRPCRouter({
 
         if (allTechs.length === 0) {
           return {
-            repositories: [],
-            totalCount: 0,
-            message: "No technologies found in profile",
+            data: {
+              repositories: [],
+              totalCount: 0,
+            },
+            error: null,
+            message: "no technologies found in profile",
           };
         }
 
-        // Map experience level (expert -> advanced for search)
+        // map experience level (expert -> advanced for search)
         const experienceLevel =
           input.experienceLevel === "expert"
             ? "advanced"
             : input.experienceLevel;
 
-        // Determine search parameters based on experience
+        // determine search parameters based on experience
         const baseFilters = getBaseFilters(
           experienceLevel,
           input.yearsOfExperience ?? null,
         );
 
-        // Create search queries for each technology
+        // create search queries for each technology
         const searchQueries = allTechs.slice(0, 8).map((tech) => {
           const techCategory = getTechCategory(tech, input.skills);
 
@@ -97,12 +70,12 @@ export const matchRouter = createTRPCRouter({
           };
         });
 
-        // Execute searches in parallel
+        // execute searches in parallel
         const searchPromises = searchQueries.map(
           async ({ tech, category, filters }) => {
             try {
               const query = buildGitHubSearchQuery(filters);
-              const response = await githubClient.searchRepositories(query, 15);
+              const response = await searchRepositories(query, 15);
 
               return response.repositories.map((repo) => ({
                 ...repo,
@@ -110,7 +83,7 @@ export const matchRouter = createTRPCRouter({
                 matchedCategory: category,
               }));
             } catch (error) {
-              console.error(`Error searching for ${tech}:`, error);
+              console.error(`[match] error searching for ${tech}:`, error);
               return [];
             }
           },
@@ -119,10 +92,10 @@ export const matchRouter = createTRPCRouter({
         const allResults = await Promise.all(searchPromises);
         const allRepos = allResults.flat();
 
-        // Deduplicate repositories
+        // deduplicate repositories
         const uniqueRepos = deduplicateRepositories(allRepos);
 
-        // Score and rank repositories
+        // score and rank repositories
         const scoredRepos = scoreAndRankRepositories(
           uniqueRepos,
           input.skills,
@@ -133,13 +106,20 @@ export const matchRouter = createTRPCRouter({
         );
 
         return {
-          repositories: scoredRepos.slice(0, 50), // Top 50 matches
-          totalCount: scoredRepos.length,
-          message: `Found ${scoredRepos.length} repositories matching your profile`,
+          data: {
+            repositories: scoredRepos.slice(0, 50), // top 50 matches
+            totalCount: scoredRepos.length,
+          },
+          error: null,
+          message: `found ${scoredRepos.length} repositories matching your profile`,
         };
       } catch (error) {
-        console.error("Error finding matches:", error);
-        throw new Error("Failed to find matches");
+        console.error("[match] error finding matches:", error);
+        return {
+          data: null,
+          error: "failed to find matches",
+          message: "error finding matches",
+        };
       }
     }),
 });
@@ -186,7 +166,7 @@ function getBaseFilters(
     competitionLevel: null as "low" | "medium" | "high" | null,
   };
 
-  // Experience-specific settings
+  // experience-specific settings
   if (experienceLevel === "beginner") {
     baseFilters.minStars = 50;
     baseFilters.maxStars = 5000;
@@ -238,11 +218,11 @@ function deduplicateRepositories(
   for (const repo of repos) {
     const existing = seen.get(repo.id);
 
-    // If we haven't seen this repo, or if this match is better, keep it
+    // if we haven't seen this repo, or if this match is better, keep it
     if (!existing) {
       seen.set(repo.id, repo);
     } else {
-      // Keep the one with more specific match (prefer primary language matches)
+      // keep the one with more specific match (prefer primary language matches)
       if (
         repo.matchedCategory === "programming_language" &&
         existing.matchedCategory !== "programming_language"
@@ -280,16 +260,16 @@ function scoreAndRankRepositories(
       let score = 0;
       const matchReasons: string[] = [];
 
-      // Primary language match (highest weight - 50 points)
+      // primary language match (highest weight - 50 points)
       if (
         repo.primaryLanguage &&
         userLanguages.includes(repo.primaryLanguage.name.toLowerCase())
       ) {
         score += 50;
-        matchReasons.push(`Uses ${repo.primaryLanguage.name}`);
+        matchReasons.push(`uses ${repo.primaryLanguage.name}`);
       }
 
-      // Additional languages match (20 points each)
+      // additional languages match (20 points each)
       repo.languages?.forEach((lang) => {
         const langName = lang.name.toLowerCase();
         if (
@@ -297,11 +277,11 @@ function scoreAndRankRepositories(
           repo.primaryLanguage?.name.toLowerCase() !== langName
         ) {
           score += 20;
-          matchReasons.push(`Also uses ${lang.name}`);
+          matchReasons.push(`also uses ${lang.name}`);
         }
       });
 
-      // Repository topics matching frameworks (30 points each)
+      // repository topics matching frameworks (30 points each)
       let frameworkMatches = 0;
       repo.repositoryTopics?.forEach((topicName) => {
         const normalizedTopic = topicName.toLowerCase();
@@ -310,12 +290,12 @@ function scoreAndRankRepositories(
           score += 30;
           frameworkMatches++;
           if (frameworkMatches <= 2) {
-            matchReasons.push(`Framework: ${topicName}`);
+            matchReasons.push(`framework: ${topicName}`);
           }
         }
       });
 
-      // Repository topics matching libraries (25 points each)
+      // repository topics matching libraries (25 points each)
       let libraryMatches = 0;
       repo.repositoryTopics?.forEach((topicName) => {
         const normalizedTopic = topicName.toLowerCase();
@@ -324,12 +304,12 @@ function scoreAndRankRepositories(
           score += 25;
           libraryMatches++;
           if (libraryMatches <= 2) {
-            matchReasons.push(`Library: ${topicName}`);
+            matchReasons.push(`library: ${topicName}`);
           }
         }
       });
 
-      // Repository topics matching interests (15 points each)
+      // repository topics matching interests (15 points each)
       let interestMatches = 0;
       repo.repositoryTopics?.forEach((topicName) => {
         const normalizedTopic = topicName.toLowerCase();
@@ -338,12 +318,12 @@ function scoreAndRankRepositories(
           score += 15;
           interestMatches++;
           if (interestMatches <= 2) {
-            matchReasons.push(`Interest: ${topicName}`);
+            matchReasons.push(`interest: ${topicName}`);
           }
         }
       });
 
-      // Partial topic matches (10 points)
+      // partial topic matches (10 points)
       repo.repositoryTopics?.forEach((topicName) => {
         const normalizedTopic = topicName.toLowerCase();
 
@@ -362,19 +342,19 @@ function scoreAndRankRepositories(
         });
       });
 
-      // Experience level bonuses
+      // experience level bonuses
       if (experienceLevel === "beginner") {
         if (repo.hasGoodFirstIssues) {
           score += 40;
-          matchReasons.push("Has good first issues");
+          matchReasons.push("has good first issues");
         }
         if (repo.hasContributingFile) {
           score += 20;
-          matchReasons.push("Has contributing guide");
+          matchReasons.push("has contributing guide");
         }
         if (repo.hasCodeOfConduct) {
           score += 15;
-          matchReasons.push("Has code of conduct");
+          matchReasons.push("has code of conduct");
         }
       } else if (experienceLevel === "intermediate") {
         if (repo.hasGoodFirstIssues) {
@@ -382,7 +362,7 @@ function scoreAndRankRepositories(
         }
       }
 
-      // Activity score (30 points max)
+      // activity score (30 points max)
       const daysSinceUpdate = Math.floor(
         (Date.now() - new Date(repo.updatedAt).getTime()) /
           (1000 * 60 * 60 * 24),
@@ -390,41 +370,41 @@ function scoreAndRankRepositories(
 
       if (daysSinceUpdate < 7) {
         score += 30;
-        matchReasons.push("Updated this week");
+        matchReasons.push("updated this week");
       } else if (daysSinceUpdate < 30) {
         score += 20;
-        matchReasons.push("Recently updated");
+        matchReasons.push("recently updated");
       } else if (daysSinceUpdate < 90) {
         score += 10;
       }
 
-      // Star count (normalized, max 25 points)
+      // star count (normalized, max 25 points)
       if (repo.stargazerCount > 100 && repo.stargazerCount < 1000) {
         score += 10;
       } else if (repo.stargazerCount >= 1000 && repo.stargazerCount < 5000) {
         score += 20;
-        matchReasons.push("Popular project");
+        matchReasons.push("popular project");
       } else if (repo.stargazerCount >= 5000) {
         score += 25;
-        matchReasons.push("Very popular project");
+        matchReasons.push("very popular project");
       }
 
-      // Open issues count (engagement indicator)
+      // open issues count (engagement indicator)
       if (
         repo.openIssuesCount &&
         repo.openIssuesCount > 5 &&
         repo.openIssuesCount < 100
       ) {
         score += 10;
-        matchReasons.push("Active issue tracker");
+        matchReasons.push("active issue tracker");
       }
 
-      // Direct tech match bonus (from search)
+      // direct tech match bonus (from search)
       if (repo.matchedTech) {
         score += 15;
       }
 
-      // Calculate missing filters
+      // calculate missing filters
       const missingFrameworks = userFrameworks.filter(
         (fw) =>
           !repo.repositoryTopics?.some(
@@ -442,7 +422,7 @@ function scoreAndRankRepositories(
       return {
         ...repo,
         matchScore: score,
-        matchReasons: matchReasons.slice(0, 5), // Top 5 reasons
+        matchReasons: matchReasons.slice(0, 5), // top 5 reasons
         missingFilters: {
           frameworks: missingFrameworks,
           libraries: missingLibraries,

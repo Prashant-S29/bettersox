@@ -1,60 +1,9 @@
-// Filter Categories
-export interface SearchFilters {
-  // Tech Stack
-  languages: string[];
-  frameworks: string[];
-  libraries: string[];
+// src/types/types.nlp.ts
+import type { SearchFiltersSchemaType } from "~/schema";
 
-  // Experience & Complexity
-  experienceLevel?: "beginner" | "intermediate" | "advanced" | null;
-  yearsOfExperience?: number | null;
+export type SearchFilters = SearchFiltersSchemaType;
 
-  // Project Characteristics
-  projectAge?: "very_new" | "new" | "established" | "mature" | null;
-  competitionLevel?: "low" | "medium" | "high" | null;
-  activityLevel?: "very_active" | "active" | "moderate" | "inactive" | null;
-
-  // Repository Metrics
-  minStars?: number | null;
-  maxStars?: number | null;
-  minForks?: number | null;
-  maxForks?: number | null;
-  minContributors?: number | null;
-  maxContributors?: number | null;
-
-  // Issue Filters
-  hasGoodFirstIssues: boolean;
-  hasHelpWanted: boolean;
-  minOpenIssues?: number | null;
-  issueTypes: string[];
-
-  // Maintainer Quality
-  maintainerResponsiveness: "high" | "medium" | "low" | "any";
-  hasMentor: boolean;
-
-  // Community Features
-  hasContributingGuide: boolean;
-  hasCodeOfConduct: boolean;
-  hasIssueTemplates: boolean;
-  isWelcoming: boolean;
-
-  // Topics/Tags
-  topics: string[];
-
-  // License
-  licenses: string[];
-
-  // Time-based
-  lastPushedWithin?:
-    | "7days"
-    | "30days"
-    | "90days"
-    | "180days"
-    | "365days"
-    | null;
-}
-
-// Extracted matches from query (for real-time highlighting)
+// extracted matches from query (for real-time highlighting)
 export interface ExtractedMatch {
   text: string;
   category: FilterCategory;
@@ -63,7 +12,7 @@ export interface ExtractedMatch {
   value: string | string[];
 }
 
-// Internal categories (used by patterns)
+// internal categories (used by patterns)
 export type FilterCategory =
   | "language"
   | "framework"
@@ -74,7 +23,7 @@ export type FilterCategory =
   | "activity"
   | "issue";
 
-// UI categories (shown as badges)
+// ui categories (shown as badges)
 export type UICategory =
   | "languages"
   | "contributors"
@@ -83,7 +32,7 @@ export type UICategory =
   | "activity"
   | "issue";
 
-// Parsed query result (for real-time parsing)
+// parsed query result (for real-time parsing)
 export interface ParsedQuery {
   originalQuery: string;
   filters: Partial<SearchFilters>;
@@ -91,7 +40,7 @@ export interface ParsedQuery {
   confidence: number;
 }
 
-// Pattern definition for extraction
+// pattern definition for extraction
 export interface Pattern {
   regex: RegExp;
   category: FilterCategory;
