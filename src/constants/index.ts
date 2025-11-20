@@ -13,7 +13,7 @@ export const featureFlags: Record<string, FeatureFlag> = {
     beta: false,
     experimental: false,
     isNew: true,
-    href: "/search",
+    href: "/match",
     label: "Match",
   },
   profile: {
