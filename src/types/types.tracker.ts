@@ -1,188 +1,106 @@
-export const TRACKABLE_EVENTS = {
-  // Branch & Merge events
-  MERGE_TO_MAIN: "merge_to_main",
-  MERGE_TO_BRANCH: "merge_to_branch",
-  NEW_BRANCH: "new_branch",
+// src/types/types.tracker.ts
 
+// All trackable events combined
+export const TRACKABLE_EVENTS = {
+  // PR events
+  NEW_PR: "new_pr",
+  PR_MERGED_TO_DEFAULT: "pr_merged_to_default",
+  PR_MERGED_TO_BRANCH: "pr_merged_to_branch",
+  PR_MERGED: "pr_merged", // Generic PR merged (any branch)
+  MERGE_TO_MAIN: "merge_to_main", // Alias for PR_MERGED_TO_DEFAULT
+  
   // Issue events
   NEW_ISSUE: "new_issue",
-  ISSUE_CLOSED: "issue_closed",
-
-  // Pull Request events
-  NEW_PR: "new_pr",
-  PR_MERGED: "pr_merged",
-  PR_CLOSED: "pr_closed",
-
+  NEW_ISSUE_WITH_TAG: "new_issue_with_tag",
+  NEW_ISSUE_WITH_CUSTOM_TAG: "new_issue_with_custom_tag",
+  
+  // Social/Community events
+  NEW_CONTRIBUTOR: "new_contributor",
+  NEW_FORK: "new_fork",
+  STARS_MILESTONE: "stars_milestone",
+  
   // Release events
   NEW_RELEASE: "new_release",
   NEW_PRE_RELEASE: "new_pre_release",
-
-  // Collaboration events
-  NEW_CONTRIBUTOR: "new_contributor",
-  NEW_FORK: "new_fork",
-
-  // Milestone events
-  STARS_MILESTONE: "stars_milestone",
-
-  // Repository changes
-  DESCRIPTION_CHANGED: "description_changed",
-  TOPICS_CHANGED: "topics_changed",
+  
+  // Branch events
+  NEW_BRANCH: "new_branch",
 } as const;
 
-export type TrackableEvent =
-  (typeof TRACKABLE_EVENTS)[keyof typeof TRACKABLE_EVENTS];
+// PR events with specific merge targets (for UI grouping)
+export const PR_EVENTS = {
+  NEW_PR: TRACKABLE_EVENTS.NEW_PR,
+  PR_MERGED_TO_DEFAULT: TRACKABLE_EVENTS.PR_MERGED_TO_DEFAULT,
+  PR_MERGED_TO_BRANCH: TRACKABLE_EVENTS.PR_MERGED_TO_BRANCH,
+} as const;
 
-export interface EventOption {
-  id: TrackableEvent;
-  label: string;
-  description: string;
-  category: "commits" | "issues" | "pulls" | "releases" | "social" | "repo";
-  hasSubOptions: boolean;
-  subOptions?: {
-    id: string;
-    label: string;
-    type: "input" | "select";
-    options?: string[];
-  }[];
+export const ISSUE_EVENTS = {
+  NEW_ISSUE: TRACKABLE_EVENTS.NEW_ISSUE,
+  NEW_ISSUE_WITH_TAG: TRACKABLE_EVENTS.NEW_ISSUE_WITH_TAG,
+  NEW_ISSUE_WITH_CUSTOM_TAG: TRACKABLE_EVENTS.NEW_ISSUE_WITH_CUSTOM_TAG,
+} as const;
+
+// additional options (for UI grouping)
+export const SOCIAL_EVENTS = {
+  NEW_CONTRIBUTOR: TRACKABLE_EVENTS.NEW_CONTRIBUTOR,
+  NEW_FORK: TRACKABLE_EVENTS.NEW_FORK,
+  STARS_MILESTONE: TRACKABLE_EVENTS.STARS_MILESTONE,
+  NEW_RELEASE: TRACKABLE_EVENTS.NEW_RELEASE,
+} as const;
+
+export type TrackableEvent = (typeof TRACKABLE_EVENTS)[keyof typeof TRACKABLE_EVENTS];
+export type PrEvent = (typeof PR_EVENTS)[keyof typeof PR_EVENTS];
+export type IssueEvent = (typeof ISSUE_EVENTS)[keyof typeof ISSUE_EVENTS];
+export type SocialEvent = (typeof SOCIAL_EVENTS)[keyof typeof SOCIAL_EVENTS];
+
+// common github issue labels
+export const GITHUB_LABELS = [
+  {
+    value: "bug",
+    label: "Bug",
+    description: "Indicates an unexpected problem",
+  },
+  {
+    value: "documentation",
+    label: "Documentation",
+    description: "Improvements or additions to documentation",
+  },
+  {
+    value: "duplicate",
+    label: "Duplicate",
+    description: "Similar issues or PRs",
+  },
+  {
+    value: "enhancement",
+    label: "Enhancement",
+    description: "New feature requests",
+  },
+  {
+    value: "good first issue",
+    label: "Good First Issue",
+    description: "Good for first-time contributors",
+  },
+  {
+    value: "help wanted",
+    label: "Help Wanted",
+    description: "Maintainer wants help",
+  },
+  { value: "invalid", label: "Invalid", description: "No longer relevant" },
+  {
+    value: "question",
+    label: "Question",
+    description: "Needs more information",
+  },
+  { value: "wontfix", label: "Won't Fix", description: "Work won't continue" },
+] as const;
+
+// repo metadata from github
+export interface RepoMetadata {
+  owner: string;
+  name: string;
+  fullName: string;
+  defaultBranch: string;
+  branches: string[];
+  isPrivate: boolean;
+  isArchived: boolean;
 }
-
-export const EVENT_OPTIONS: EventOption[] = [
-  // Commits & Branches
-  {
-    id: TRACKABLE_EVENTS.MERGE_TO_MAIN,
-    label: "Merge to main branch",
-    description: "Get notified when a PR is merged to the main/master branch",
-    category: "commits",
-    hasSubOptions: false,
-  },
-  {
-    id: TRACKABLE_EVENTS.MERGE_TO_BRANCH,
-    label: "Merge to specific branch",
-    description: "Track merges to a specific branch",
-    category: "commits",
-    hasSubOptions: true,
-    subOptions: [
-      {
-        id: "branch_name",
-        label: "Branch name",
-        type: "input",
-      },
-    ],
-  },
-  {
-    id: TRACKABLE_EVENTS.NEW_BRANCH,
-    label: "New branch created",
-    description: "Get notified when a new branch is created",
-    category: "commits",
-    hasSubOptions: false,
-  },
-
-  // Issues
-  {
-    id: TRACKABLE_EVENTS.NEW_ISSUE,
-    label: "New issue opened",
-    description: "Track when new issues are created",
-    category: "issues",
-    hasSubOptions: false,
-  },
-  {
-    id: TRACKABLE_EVENTS.ISSUE_CLOSED,
-    label: "Issue closed",
-    description: "Get notified when issues are closed",
-    category: "issues",
-    hasSubOptions: false,
-  },
-
-  // Pull Requests
-  {
-    id: TRACKABLE_EVENTS.NEW_PR,
-    label: "New pull request",
-    description: "Track new pull requests",
-    category: "pulls",
-    hasSubOptions: true,
-    subOptions: [
-      {
-        id: "target_branch",
-        label: "Target branch (optional)",
-        type: "input",
-      },
-    ],
-  },
-  {
-    id: TRACKABLE_EVENTS.PR_MERGED,
-    label: "Pull request merged",
-    description: "Get notified when PRs are merged",
-    category: "pulls",
-    hasSubOptions: false,
-  },
-  {
-    id: TRACKABLE_EVENTS.PR_CLOSED,
-    label: "Pull request closed",
-    description: "Track when PRs are closed without merging",
-    category: "pulls",
-    hasSubOptions: false,
-  },
-
-  // Releases
-  {
-    id: TRACKABLE_EVENTS.NEW_RELEASE,
-    label: "New release published",
-    description: "Get notified about new stable releases",
-    category: "releases",
-    hasSubOptions: false,
-  },
-  {
-    id: TRACKABLE_EVENTS.NEW_PRE_RELEASE,
-    label: "New pre-release",
-    description: "Track beta/alpha releases",
-    category: "releases",
-    hasSubOptions: false,
-  },
-
-  // Social & Growth
-  {
-    id: TRACKABLE_EVENTS.NEW_CONTRIBUTOR,
-    label: "New contributor",
-    description: "Get notified when someone makes their first contribution",
-    category: "social",
-    hasSubOptions: false,
-  },
-  {
-    id: TRACKABLE_EVENTS.NEW_FORK,
-    label: "Repository forked",
-    description: "Track when the repo is forked",
-    category: "social",
-    hasSubOptions: false,
-  },
-  {
-    id: TRACKABLE_EVENTS.STARS_MILESTONE,
-    label: "Stars milestone reached",
-    description: "Get notified every 100/500/1000 stars",
-    category: "social",
-    hasSubOptions: true,
-    subOptions: [
-      {
-        id: "milestone_interval",
-        label: "Notify every",
-        type: "select",
-        options: ["100 stars", "500 stars", "1000 stars"],
-      },
-    ],
-  },
-
-  // Repository Changes
-  {
-    id: TRACKABLE_EVENTS.DESCRIPTION_CHANGED,
-    label: "Description updated",
-    description: "Track changes to repository description",
-    category: "repo",
-    hasSubOptions: false,
-  },
-  {
-    id: TRACKABLE_EVENTS.TOPICS_CHANGED,
-    label: "Topics updated",
-    description: "Get notified when repository topics change",
-    category: "repo",
-    hasSubOptions: false,
-  },
-];

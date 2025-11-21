@@ -29,6 +29,7 @@ import { db } from "~/lib/storage";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { toast } from "sonner";
+import { formatDateWithDiff } from "~/lib/utils/date-parser";
 
 interface RepositoryCardProps {
   repository: EnrichedRepository;
@@ -67,19 +68,7 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
     return num.toString();
   };
 
-  const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays < 1) return "today";
-    if (diffDays === 1) return "yesterday";
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-    if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
-    return `${Math.floor(diffDays / 365)} years ago`;
-  };
+  
 
   const handleBookmarkToggle = async () => {
     try {
@@ -223,7 +212,7 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
           <span>{repository.openIssuesCount} open issues</span>
         </div>
 
-        <span>Updated {formatDate(repository.pushedAt)}</span>
+        <span>Updated {formatDateWithDiff(repository.pushedAt)}</span>
       </div>
 
       {repository.topics.length > 0 && (

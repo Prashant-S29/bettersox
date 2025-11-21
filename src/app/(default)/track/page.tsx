@@ -1,25 +1,64 @@
+"use client";
+
 import React from "react";
-import { headers } from "next/headers";
+import Link from "next/link";
+
+import { api } from "~/trpc/react";
+
+// libs
+import { formatDate } from "~/lib/utils/date-parser";
+import { authClient } from "~/lib/auth-client";
+
+// icons
+import { PlusIcon } from "lucide-react";
 
 // components
 import { Container, SignupAlert } from "~/components/common";
+import { Button } from "~/components/ui/button";
+import { Skeleton } from "~/components/ui/skeleton";
+import { Badge } from "~/components/ui/badge";
 
-// libs
-import { auth } from "~/lib/auth";
+const Track: React.FC = () => {
+  const { data: session, isPending } = authClient.useSession();
 
-const Track: React.FC = async () => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const { data: trackerData, isLoading } =
+    api.tracker.getTrackerMetadata.useQuery(undefined, {
+      enabled: !!session?.user,
+    });
 
-  if (!session?.session.id) {
+  if (isLoading || isPending) {
+    return (
+      <Container className="flex flex-col gap-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-lg font-semibold">Track a Repo</h1>
+            <p className="text-muted-foreground text-sm">
+              Enable tracker on a github repository to get all the updates
+              directly in your inbox
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2 rounded-lg border p-2">
+          <Skeleton className="h-6 w-full max-w-[300px]" />
+          <div className="flex flex-col gap-1">
+            <Skeleton className="h-3 w-full max-w-[500px]" />
+            <Skeleton className="h-3 w-full max-w-[500px]" />
+            <Skeleton className="h-3 w-full max-w-[500px]" />
+          </div>
+        </div>
+      </Container>
+    );
+  }
+
+  if (!session?.user) {
     return (
       <Container className="flex flex-col gap-6">
         <div>
           <h1 className="text-lg font-semibold">Track a Repo</h1>
           <p className="text-muted-foreground text-sm">
-            Enable tracker on a GitHub repository to get all the updates
-            directly in your inbox.
+            Enable tracker on a github repository to get all the updates
+            directly in your inbox
           </p>
         </div>
         <SignupAlert />
@@ -29,17 +68,72 @@ const Track: React.FC = async () => {
 
   return (
     <Container className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-lg font-semibold">Track a Repo</h1>
-        <p className="text-muted-foreground text-sm">
-          Enable tracker on a GitHub repository to get all the updates directly
-          in your inbox.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-semibold">Track a Repo</h1>
+          <p className="text-muted-foreground text-sm">
+            Enable tracker on a github repository to get all the updates
+            directly in your inbox
+          </p>
+        </div>
       </div>
-      <p>
-        you are logged in as
-        {session?.user.email}
-      </p>
+
+      {trackerData?.data?.id ? (
+        <div className="flex flex-col gap-5">
+          <div className="bg-card flex items-center justify-between gap-9 rounded-lg border p-3">
+            <div>
+              <p className="text-sm font-medium">You have an active tracker</p>
+              <p className="text-muted-foreground text-sm">
+                You can only track one repo at a time. To create a new tracker,
+                delete the existing one.
+              </p>
+            </div>
+            <Button variant="secondary" size="smaller" disabled>
+              <PlusIcon />
+              Create Tracker
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-2">
+            <div className="bg-card group flex flex-col gap-1 rounded-lg border p-3">
+              <div className="flex w-full items-center justify-between">
+                <Link
+                  href={`/track/${trackerData.data.id}`}
+                  className="font-semibold underline-offset-2 group-hover:underline"
+                >
+                  {trackerData.data.repoFullName}
+                </Link>
+
+                <Badge variant="outline" className="gap-2">
+                  <span className="bg-primary size-2 rounded-full" />
+                  Active
+                </Badge>
+              </div>
+
+              <div className="text-muted-foreground text-sm">
+                <p>
+                  Create at: {formatDate(trackerData.data.createdAt.toString())}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-card flex items-center justify-between gap-9 rounded-lg border p-3">
+          <div>
+            <p className="text-sm font-medium">No active tracker found</p>
+            <p className="text-muted-foreground text-sm">
+              Create your first tracker to get started.
+            </p>
+          </div>
+          <Button variant="secondary" size="smaller" asChild>
+            <Link href="/track/new">
+              <PlusIcon />
+              Create Tracker
+            </Link>
+          </Button>
+        </div>
+      )}
     </Container>
   );
 };

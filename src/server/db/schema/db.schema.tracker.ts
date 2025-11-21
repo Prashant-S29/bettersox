@@ -50,7 +50,10 @@ export const trackedRepos = pgTable(
     // timestamps
     trackedSince: timestamp("tracked_since").defaultNow().notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
   },
   (table) => [
     uniqueIndex("idx_tracked_repos_user_id_unique").on(table.userId),
@@ -79,17 +82,19 @@ export const eventsLog = pgTable(
     notificationSent: boolean("notification_sent").default(false).notNull(),
 
     createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
   },
-  (table) => ({
-    trackedRepoIdx: index("idx_events_log_tracked_repo").on(
-      table.trackedRepoId,
-    ),
-    detectedAtIdx: index("idx_events_log_detected_at").on(table.detectedAt),
-    notifiedIdx: index("idx_events_log_notified").on(
+  (table) => [
+    index("idx_events_log_tracked_repo").on(table.trackedRepoId),
+    index("idx_events_log_detected_at").on(table.detectedAt),
+    index("idx_events_log_notified").on(
       table.notificationSent,
       table.notifiedAt,
     ),
-  }),
+  ],
 );
 
 // relations

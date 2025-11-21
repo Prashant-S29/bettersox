@@ -51,3 +51,5 @@ export const featureFlags: Record<string, FeatureFlag> = {
 export const getNavItems = () => {
   return Object.values(featureFlags);
 };
+
+export const protectedRoutes = ["/track/new"];

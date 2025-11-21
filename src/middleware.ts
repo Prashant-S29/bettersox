@@ -1,11 +1,24 @@
 import { NextResponse } from "next/server";
+import { getSessionCookie } from "better-auth/cookies";
+
 import type { NextRequest } from "next/server";
-import { featureFlags } from "~/constants";
+import { featureFlags, protectedRoutes } from "~/constants";
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  let isAuthenticated = false;
 
-  // skip for dev env
+  const sessionCookie = getSessionCookie(request);
+  isAuthenticated = !!sessionCookie;
+
+  const isProtectedRoute = protectedRoutes.some((route) =>
+    pathname.startsWith(route),
+  );
+
+  if (isProtectedRoute && !isAuthenticated) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
   if (process.env.NODE_ENV === "development") {
     return NextResponse.next();
   }
