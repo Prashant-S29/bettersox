@@ -26,12 +26,8 @@ export default function RootLayout({
       <body>
         <Provider>
           <Toaster />
-          {/* <Header /> */}
           <SideMenu />
-          <main className="w-full">
-            {/* <SidebarTrigger /> */}
-            {children}
-          </main>
+          <main className="w-full">{children}</main>
         </Provider>
       </body>
     </html>

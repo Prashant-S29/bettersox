@@ -8,11 +8,19 @@ type FeatureFlag = {
 };
 
 // Tracker Configuration
+
 export const TRACKER_CONFIG = {
-  MAX_TRACKERS_PER_USER: 1,
-  MAX_TRACKED_EVENTS: 4,
-  POLLING_INTERVAL: 5 * 60 * 1000, // 5 minutes in ms
-  ACTIVITY_CHECK_LOOKBACK: 10, // Check events from last 10 minutes
+  // Check for activity changes every 5 minutes
+  POLL_INTERVAL_MINUTES: 5,
+
+  // Look back 30 minutes for new events (increased from default)
+  ACTIVITY_CHECK_LOOKBACK: 30,
+
+  // Maximum error count before deactivating tracker
+  MAX_ERROR_COUNT: 10,
+
+  // Batch size for processing trackers
+  BATCH_SIZE: 5,
 } as const;
 
 export const featureFlags: Record<string, FeatureFlag> = {

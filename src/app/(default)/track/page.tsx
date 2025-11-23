@@ -6,17 +6,15 @@ import Link from "next/link";
 import { api } from "~/trpc/react";
 
 // libs
-import { formatDate } from "~/lib/utils/date-parser";
 import { authClient } from "~/lib/auth-client";
 
 // icons
 import { PlusIcon } from "lucide-react";
 
 // components
-import { Container, SignupAlert } from "~/components/common";
+import { Container, SignupAlert, TrackerCard } from "~/components/common";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
-import { Badge } from "~/components/ui/badge";
 
 const Track: React.FC = () => {
   const { data: session, isPending } = authClient.useSession();
@@ -95,27 +93,7 @@ const Track: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-2">
-            <div className="bg-card group flex flex-col gap-1 rounded-lg border p-3">
-              <div className="flex w-full items-center justify-between">
-                <Link
-                  href={`/track/${trackerData.data.id}`}
-                  className="font-semibold underline-offset-2 group-hover:underline"
-                >
-                  {trackerData.data.repoFullName}
-                </Link>
-
-                <Badge variant="outline" className="gap-2">
-                  <span className="bg-primary size-2 rounded-full" />
-                  Active
-                </Badge>
-              </div>
-
-              <div className="text-muted-foreground text-sm">
-                <p>
-                  Create at: {formatDate(trackerData.data.createdAt.toString())}
-                </p>
-              </div>
-            </div>
+            <TrackerCard trackerData={trackerData.data} />
           </div>
         </div>
       ) : (

@@ -74,7 +74,7 @@ const GET_REPO_ACTIVITY_QUERY = `
           }
         }
       }
-      
+        
       issues(
         first: 20
         orderBy: {field: UPDATED_AT, direction: DESC}
@@ -90,6 +90,11 @@ const GET_REPO_ACTIVITY_QUERY = `
           closedAt
           author {
             login
+          }
+          labels(first: 10) {
+            nodes {
+              name
+            }
           }
         }
       }

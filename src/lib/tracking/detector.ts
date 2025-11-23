@@ -21,31 +21,11 @@ export class EventDetector {
   }
 
   detect(newData: RepoActivityData): DetectedEvent[] {
-    if (!this.cachedData) {
-      // first run - no events to detect
-      return [];
-    }
-
     const events: DetectedEvent[] = [];
     const lookbackMinutes = TRACKER_CONFIG.ACTIVITY_CHECK_LOOKBACK;
 
-    // detect merge to main
-    if (this.trackedEvents.has(TRACKABLE_EVENTS.MERGE_TO_MAIN)) {
-      const mergedPRs = this.detectMergedPRs(newData, "main", lookbackMinutes);
-      events.push(...mergedPRs);
-    }
-
-    // detect new branches
-    if (this.trackedEvents.has(TRACKABLE_EVENTS.NEW_BRANCH)) {
-      const newBranches = this.detectNewBranches(newData);
-      events.push(...newBranches);
-    }
-
-    // detect new issues
-    if (this.trackedEvents.has(TRACKABLE_EVENTS.NEW_ISSUE)) {
-      const newIssues = this.detectNewIssues(newData, lookbackMinutes);
-      events.push(...newIssues);
-    }
+    // Note: We removed the early return when cachedData is null
+    // Individual detection methods handle the null case
 
     // detect new prs
     if (this.trackedEvents.has(TRACKABLE_EVENTS.NEW_PR)) {
@@ -53,10 +33,61 @@ export class EventDetector {
       events.push(...newPRs);
     }
 
-    // detect pr merged
-    if (this.trackedEvents.has(TRACKABLE_EVENTS.PR_MERGED)) {
-      const mergedPRs = this.detectMergedPRs(newData, null, lookbackMinutes);
+    // detect new issues (all)
+    if (this.trackedEvents.has(TRACKABLE_EVENTS.NEW_ISSUE)) {
+      const newIssues = this.detectNewIssues(newData, lookbackMinutes);
+      events.push(...newIssues);
+    }
+
+    // detect new issues with specific tag
+    for (const trackedEvent of this.trackedEvents) {
+      if (trackedEvent.startsWith("new_issue_with_tag:")) {
+        const tag = trackedEvent.split(":")[1];
+        if (tag) {
+          const taggedIssues = this.detectNewIssuesWithTag(
+            newData,
+            tag,
+            lookbackMinutes,
+          );
+          events.push(...taggedIssues);
+        }
+      }
+
+      if (trackedEvent.startsWith("new_issue_with_custom_tag:")) {
+        const tag = trackedEvent.split(":")[1];
+        if (tag) {
+          const taggedIssues = this.detectNewIssuesWithTag(
+            newData,
+            tag,
+            lookbackMinutes,
+          );
+          events.push(...taggedIssues);
+        }
+      }
+
+      if (trackedEvent.startsWith("pr_merged_to_branch:")) {
+        const branch = trackedEvent.split(":")[1];
+        if (branch) {
+          const mergedPRs = this.detectMergedPRs(
+            newData,
+            branch,
+            lookbackMinutes,
+          );
+          events.push(...mergedPRs);
+        }
+      }
+    }
+
+    // detect pr merged to default
+    if (this.trackedEvents.has("pr_merged_to_default")) {
+      const mergedPRs = this.detectPRsMergedToDefault(newData, lookbackMinutes);
       events.push(...mergedPRs);
+    }
+
+    // detect new branches
+    if (this.trackedEvents.has(TRACKABLE_EVENTS.NEW_BRANCH)) {
+      const newBranches = this.detectNewBranches(newData);
+      events.push(...newBranches);
     }
 
     // detect new releases
@@ -72,9 +103,15 @@ export class EventDetector {
     }
 
     // detect new forks
-    if (this.trackedEvents.has(TRACKABLE_EVENTS.NEW_FORK)) {
+    if (this.trackedEvents.has("new_fork")) {
       const newForks = this.detectNewForks(newData, lookbackMinutes);
       events.push(...newForks);
+    }
+
+    // detect new contributors
+    if (this.trackedEvents.has("new_contributor")) {
+      const newContributors = this.detectNewContributors(newData);
+      events.push(...newContributors);
     }
 
     // detect stars milestone
@@ -150,8 +187,34 @@ export class EventDetector {
     data: RepoActivityData,
     lookbackMinutes: number,
   ): DetectedEvent[] {
-    const newIssues = data.repository.issues.nodes.filter((issue) =>
-      this.isWithinLookback(issue.createdAt, lookbackMinutes),
+    // If no cached data, use timestamp-only check
+    if (!this.cachedData) {
+      const newIssues = data.repository.issues.nodes.filter((issue) =>
+        this.isWithinLookback(issue.createdAt, lookbackMinutes),
+      );
+
+      return newIssues.map((issue) => ({
+        type: TRACKABLE_EVENTS.NEW_ISSUE,
+        title: `new issue #${issue.number}: ${issue.title}`,
+        url: issue.url,
+        author: issue.author.login,
+        timestamp: issue.createdAt,
+        metadata: {
+          issueNumber: issue.number,
+          state: issue.state,
+        },
+      }));
+    }
+
+    // Compare with cached data to find truly new issues
+    const oldIssueNumbers = new Set(
+      this.cachedData.repository.issues.nodes.map((i) => i.number),
+    );
+
+    const newIssues = data.repository.issues.nodes.filter(
+      (issue) =>
+        !oldIssueNumbers.has(issue.number) &&
+        this.isWithinLookback(issue.createdAt, lookbackMinutes),
     );
 
     return newIssues.map((issue) => ({
@@ -171,8 +234,35 @@ export class EventDetector {
     data: RepoActivityData,
     lookbackMinutes: number,
   ): DetectedEvent[] {
-    const newPRs = data.repository.pullRequests.nodes.filter((pr) =>
-      this.isWithinLookback(pr.createdAt, lookbackMinutes),
+    // If no cached data, use timestamp-only check
+    if (!this.cachedData) {
+      const newPRs = data.repository.pullRequests.nodes.filter((pr) =>
+        this.isWithinLookback(pr.createdAt, lookbackMinutes),
+      );
+
+      return newPRs.map((pr) => ({
+        type: TRACKABLE_EVENTS.NEW_PR,
+        title: `new PR #${pr.number}: ${pr.title}`,
+        url: pr.url,
+        author: pr.author.login,
+        timestamp: pr.createdAt,
+        metadata: {
+          prNumber: pr.number,
+          baseRef: pr.baseRefName,
+          headRef: pr.headRefName,
+        },
+      }));
+    }
+
+    // Compare with cached data to find truly new PRs
+    const oldPRNumbers = new Set(
+      this.cachedData.repository.pullRequests.nodes.map((pr) => pr.number),
+    );
+
+    const newPRs = data.repository.pullRequests.nodes.filter(
+      (pr) =>
+        !oldPRNumbers.has(pr.number) &&
+        this.isWithinLookback(pr.createdAt, lookbackMinutes),
     );
 
     return newPRs.map((pr) => ({
@@ -225,8 +315,33 @@ export class EventDetector {
     data: RepoActivityData,
     lookbackMinutes: number,
   ): DetectedEvent[] {
-    const newForks = data.repository.forks.nodes.filter((fork) =>
-      this.isWithinLookback(fork.createdAt, lookbackMinutes),
+    // If no cached data, use timestamp-only check
+    if (!this.cachedData) {
+      const newForks = data.repository.forks.nodes.filter((fork) =>
+        this.isWithinLookback(fork.createdAt, lookbackMinutes),
+      );
+
+      return newForks.map((fork) => ({
+        type: TRACKABLE_EVENTS.NEW_FORK,
+        title: `repository forked by ${fork.owner.login}`,
+        url: `https://github.com/${fork.nameWithOwner}`,
+        author: fork.owner.login,
+        timestamp: fork.createdAt,
+        metadata: {
+          forkName: fork.nameWithOwner,
+        },
+      }));
+    }
+
+    // Compare with cached data to find truly new forks
+    const oldForkNames = new Set(
+      this.cachedData.repository.forks.nodes.map((f) => f.nameWithOwner),
+    );
+
+    const newForks = data.repository.forks.nodes.filter(
+      (fork) =>
+        !oldForkNames.has(fork.nameWithOwner) &&
+        this.isWithinLookback(fork.createdAt, lookbackMinutes),
     );
 
     return newForks.map((fork) => ({
@@ -265,5 +380,109 @@ export class EventDetector {
     }
 
     return null;
+  }
+
+  private detectNewIssuesWithTag(
+    data: RepoActivityData,
+    tag: string,
+    lookbackMinutes: number,
+  ): DetectedEvent[] {
+    // If no cached data, use timestamp-only check
+    if (!this.cachedData) {
+      const newIssues = data.repository.issues.nodes.filter((issue) => {
+        const hasTag = issue.labels.nodes.some((label) => label.name === tag);
+        return (
+          hasTag && this.isWithinLookback(issue.createdAt, lookbackMinutes)
+        );
+      });
+
+      return newIssues.map((issue) => ({
+        type: `new_issue_with_tag:${tag}`,
+        title: `new issue #${issue.number}: ${issue.title}`,
+        url: issue.url,
+        author: issue.author.login,
+        timestamp: issue.createdAt,
+        metadata: {
+          issueNumber: issue.number,
+          state: issue.state,
+          tag: tag,
+        },
+      }));
+    }
+
+    // Compare with cached data to find truly new issues
+    const oldIssueNumbers = new Set(
+      this.cachedData.repository.issues.nodes.map((i) => i.number),
+    );
+
+    const newIssues = data.repository.issues.nodes.filter((issue) => {
+      const hasTag = issue.labels.nodes.some((label) => label.name === tag);
+      return (
+        !oldIssueNumbers.has(issue.number) &&
+        hasTag &&
+        this.isWithinLookback(issue.createdAt, lookbackMinutes)
+      );
+    });
+
+    return newIssues.map((issue) => ({
+      type: `new_issue_with_tag:${tag}`,
+      title: `new issue #${issue.number}: ${issue.title}`,
+      url: issue.url,
+      author: issue.author.login,
+      timestamp: issue.createdAt,
+      metadata: {
+        issueNumber: issue.number,
+        state: issue.state,
+        tag: tag,
+      },
+    }));
+  }
+
+  private detectPRsMergedToDefault(
+    data: RepoActivityData,
+    lookbackMinutes: number,
+  ): DetectedEvent[] {
+    const defaultBranch = data.repository.defaultBranchRef.name;
+    const mergedPRs = data.repository.pullRequests.nodes.filter((pr) => {
+      if (!pr.merged || !pr.mergedAt) return false;
+      if (pr.baseRefName !== defaultBranch) return false;
+      return this.isWithinLookback(pr.mergedAt, lookbackMinutes);
+    });
+
+    return mergedPRs.map((pr) => ({
+      type: "pr_merged_to_default",
+      title: `PR #${pr.number} merged to ${defaultBranch}: ${pr.title}`,
+      url: pr.url,
+      author: pr.mergedBy?.login ?? pr.author.login,
+      timestamp: pr.mergedAt!,
+      metadata: {
+        prNumber: pr.number,
+        branch: pr.baseRefName,
+        headBranch: pr.headRefName,
+      },
+    }));
+  }
+
+  private detectNewContributors(data: RepoActivityData): DetectedEvent[] {
+    if (!this.cachedData) return [];
+
+    const oldContributors = new Set(
+      this.cachedData.repository.mentionableUsers.nodes.map((u) => u.login),
+    );
+
+    const newContributors = data.repository.mentionableUsers.nodes.filter(
+      (user) => !oldContributors.has(user.login),
+    );
+
+    return newContributors.map((user) => ({
+      type: "new_contributor",
+      title: `New contributor: ${user.login}`,
+      url: `https://github.com/${user.login}`,
+      author: user.login,
+      timestamp: new Date().toISOString(),
+      metadata: {
+        contributorLogin: user.login,
+      },
+    }));
   }
 }

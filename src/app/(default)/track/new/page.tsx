@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { api } from "~/trpc/react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { api } from "~/trpc/react";
 
 // zod and rfh
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -49,11 +50,12 @@ import { Container } from "~/components/common";
 import { Separator } from "~/components/ui/separator";
 import { Badge } from "~/components/ui/badge";
 import { Switch } from "~/components/ui/switch";
+import { Skeleton } from "~/components/ui/skeleton";
 
 // icons
-import { ArrowLeftIcon, Loader2Icon } from "lucide-react";
-import { Skeleton } from "~/components/ui/skeleton";
-import Link from "next/link";
+import { ChevronLeft, Loader2Icon } from "lucide-react";
+
+// lib
 import { formatDate } from "~/lib/utils/date-parser";
 
 const NewTracker: React.FC = () => {
@@ -61,7 +63,6 @@ const NewTracker: React.FC = () => {
   const [step, setStep] = useState<1 | 2>(1);
   const [repoMetadata, setRepoMetadata] = useState<RepoMetadata | null>(null);
 
-  // section visibility toggles
   const [showPrSection, setShowPrSection] = useState(false);
   const [showIssueSection, setShowIssueSection] = useState(false);
   const [showAdditionalSection, setShowAdditionalSection] = useState(false);
@@ -69,7 +70,6 @@ const NewTracker: React.FC = () => {
   const { data: trackerData, isLoading } =
     api.tracker.getTrackerMetadata.useQuery();
 
-  // step 1 form
   const verifyForm = useForm<VerifyRepoInput>({
     resolver: zodResolver(verifyRepoSchema),
     defaultValues: {
@@ -132,24 +132,19 @@ const NewTracker: React.FC = () => {
 
   const handleBack = () => {
     setStep(1);
-    setRepoMetadata(null);
-
-    // reset form
     configForm.reset();
 
-    // close all sections
+    setRepoMetadata(null);
     setShowPrSection(false);
     setShowIssueSection(false);
     setShowAdditionalSection(false);
   };
 
-  // get non-default branches
   const availableBranches =
     repoMetadata?.branches.filter(
       (branch) => branch !== repoMetadata.defaultBranch,
     ) ?? [];
 
-  // handle section toggle - reset values when disabled
   const handlePrToggle = (checked: boolean) => {
     setShowPrSection(checked);
     if (!checked) {
@@ -175,23 +170,19 @@ const NewTracker: React.FC = () => {
     }
   };
 
-  // handle PR event change - clear branch if not needed
   const handlePrEventChange = (
     value: (typeof PR_EVENTS)[keyof typeof PR_EVENTS],
   ) => {
     configForm.setValue("prEvent", value);
-    // clear prTargetBranch if not selecting pr_merged_to_branch
     if (value !== PR_EVENTS.PR_MERGED_TO_BRANCH) {
       configForm.setValue("prTargetBranch", undefined);
     }
   };
 
-  // handle issue event change - clear tag if not needed
   const handleIssueEventChange = (
     value: (typeof ISSUE_EVENTS)[keyof typeof ISSUE_EVENTS],
   ) => {
     configForm.setValue("issueEvent", value);
-    // clear issueTag if not selecting tag-based options
     if (
       value !== ISSUE_EVENTS.NEW_ISSUE_WITH_TAG &&
       value !== ISSUE_EVENTS.NEW_ISSUE_WITH_CUSTOM_TAG
@@ -200,10 +191,8 @@ const NewTracker: React.FC = () => {
     }
   };
 
-  // watch all form values for event counting
   const formValues = configForm.watch();
 
-  // count selected events
   const selectedEventsCount = useMemo(() => {
     let count = 0;
 
@@ -225,11 +214,9 @@ const NewTracker: React.FC = () => {
   const isMaxEventsReached = selectedEventsCount >= 4;
   const isFormValid = selectedEventsCount >= 1 && selectedEventsCount <= 4;
 
-  // check if PR section should be disabled (max reached and no PR selected)
   const isPrSectionDisabled =
     isMaxEventsReached && formValues.prEvent === "none";
 
-  // check if Issue section should be disabled (max reached and no issue selected)
   const isIssueSectionDisabled =
     isMaxEventsReached && formValues.issueEvent === "none";
 
@@ -306,18 +293,19 @@ const NewTracker: React.FC = () => {
 
   return (
     <Container className="flex flex-col gap-6">
-      {/* header */}
       <div className="flex items-start justify-between">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-5">
             {step === 2 && (
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
                 onClick={handleBack}
                 disabled={createTrackerMutation.isPending}
+                className="w-fit"
               >
-                <ArrowLeftIcon className="h-4 w-4" />
+                <ChevronLeft className="h-4 w-4" />
+                Setup
               </Button>
             )}
             <h1 className="text-lg font-semibold">
@@ -332,7 +320,6 @@ const NewTracker: React.FC = () => {
         </div>
       </div>
 
-      {/* step 1: verify repo */}
       {step === 1 && (
         <Form {...verifyForm}>
           <form
@@ -392,14 +379,12 @@ const NewTracker: React.FC = () => {
         </Form>
       )}
 
-      {/* step 2: configure tracking */}
       {step === 2 && repoMetadata && (
         <Form {...configForm}>
           <form
             onSubmit={configForm.handleSubmit(handleConfigSubmit)}
             className="space-y-6"
           >
-            {/* repo info */}
             <div className="bg-muted/50 rounded-lg border p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -422,7 +407,6 @@ const NewTracker: React.FC = () => {
               </div>
             </div>
 
-            {/* Pull Requests */}
             <section className="bg-sidebar rounded-lg border">
               <div className="flex items-center justify-between px-5 pt-4 pb-3">
                 <div>
@@ -461,7 +445,6 @@ const NewTracker: React.FC = () => {
                             }
                           >
                             <div className="space-y-3">
-                              {/* new PR */}
                               <div
                                 className={`flex items-center space-x-3 rounded-lg border p-3 transition-all duration-200 ${
                                   isPrSectionDisabled
@@ -487,7 +470,6 @@ const NewTracker: React.FC = () => {
                                 </Label>
                               </div>
 
-                              {/* merged to default */}
                               <div
                                 className={`flex items-center space-x-3 rounded-lg border p-3 transition-all duration-200 ${
                                   isPrSectionDisabled
@@ -518,7 +500,6 @@ const NewTracker: React.FC = () => {
                                 </Label>
                               </div>
 
-                              {/* merged to specific branch */}
                               <div
                                 className={`flex items-center space-x-3 rounded-lg border p-3 text-sm transition-all duration-200 ${
                                   isPrSectionDisabled ||
@@ -594,7 +575,6 @@ const NewTracker: React.FC = () => {
               </div>
             </section>
 
-            {/* Issues */}
             <section className="bg-sidebar rounded-lg border">
               <div className="flex items-center justify-between px-5 pt-4 pb-3">
                 <div>
@@ -633,7 +613,6 @@ const NewTracker: React.FC = () => {
                             }
                           >
                             <div className="space-y-3">
-                              {/* all new issues */}
                               <div
                                 className={`flex items-center space-x-3 rounded-lg border p-3 transition-all duration-200 ${
                                   isIssueSectionDisabled
@@ -659,7 +638,6 @@ const NewTracker: React.FC = () => {
                                 </Label>
                               </div>
 
-                              {/* new issue with predefined tag */}
                               <div
                                 className={`flex items-center space-x-3 rounded-lg border p-3 transition-all duration-200 ${
                                   isIssueSectionDisabled
@@ -745,7 +723,6 @@ const NewTracker: React.FC = () => {
                                 </div>
                               </div>
 
-                              {/* new issue with custom tag */}
                               <div
                                 className={`flex items-center space-x-3 rounded-lg border p-3 transition-all duration-200 ${
                                   isIssueSectionDisabled
@@ -814,7 +791,6 @@ const NewTracker: React.FC = () => {
               </div>
             </section>
 
-            {/* Additional Options */}
             <section className="bg-sidebar rounded-lg border">
               <div className="flex items-center justify-between px-5 pt-4 pb-3">
                 <div>
@@ -838,7 +814,6 @@ const NewTracker: React.FC = () => {
               >
                 <Separator />
                 <div className="grid grid-cols-2 gap-4 px-5 py-4">
-                  {/* new contributor */}
                   <FormField
                     control={configForm.control}
                     name="trackNewContributor"
@@ -877,7 +852,6 @@ const NewTracker: React.FC = () => {
                     )}
                   />
 
-                  {/* new fork */}
                   <FormField
                     control={configForm.control}
                     name="trackNewFork"
@@ -914,7 +888,6 @@ const NewTracker: React.FC = () => {
                     )}
                   />
 
-                  {/* new release */}
                   <FormField
                     control={configForm.control}
                     name="trackNewRelease"
@@ -954,7 +927,6 @@ const NewTracker: React.FC = () => {
               </div>
             </section>
 
-            {/* AI summaries */}
             <section className="bg-sidebar rounded-lg border">
               <div className="px-5 pt-4 pb-3">
                 <h2 className="font-medium">AI Summaries</h2>
@@ -987,7 +959,6 @@ const NewTracker: React.FC = () => {
               </div>
             </section>
 
-            {/* validation message */}
             {!isFormValid && selectedEventsCount > 0 && (
               <div className="bg-destructive/10 border-destructive/20 rounded-lg border p-4">
                 <p className="text-destructive text-sm font-medium">
@@ -1005,9 +976,6 @@ const NewTracker: React.FC = () => {
               </div>
             )}
 
-            {JSON.stringify(configForm.formState.errors, null, 2)}
-
-            {/* action buttons */}
             <div className="flex justify-end gap-3">
               <div className="flex justify-end gap-3">
                 <Button

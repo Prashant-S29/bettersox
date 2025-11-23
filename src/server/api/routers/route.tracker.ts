@@ -1,17 +1,18 @@
 // src/server/api/routers/route.tracker.ts
-import { eq } from "drizzle-orm";
+import { eq, desc, asc, and } from "drizzle-orm";
 import { createTRPCRouter } from "~/server/api/trpc";
 import { protectedProcedure, publicProcedure } from "~/server/api/procedure";
 import { trackedRepos, eventsLog } from "~/server/db/schema/db.schema.tracker";
 import {
   createTrackerSchema,
-  // updateTrackerSchema,
+  updateTrackerSchema,
   parseGitHubUrl,
   verifyRepoSchema,
   type CreateTrackerInput,
 } from "~/schema/zod.schema.tracker";
 import { getRepoActivity, getRepoMetadata } from "~/lib/github/queries";
 import { generateActivitySignature } from "~/lib/tracking/signature";
+import z from "zod";
 
 function serializeEventConfig(input: CreateTrackerInput): string[] {
   const events: string[] = [];
@@ -119,11 +120,15 @@ export const trackerRouter = createTRPCRouter({
         columns: {
           id: true,
           userId: true,
-          repoFullName:true,
+          repoFullName: true,
           repoUrl: true,
           repoOwner: true,
+          repoName: true,
           createdAt: true,
           updatedAt: true,
+          isActive: true,
+          isPaused: true,
+          errorCount: true,
         },
       });
 
@@ -142,7 +147,7 @@ export const trackerRouter = createTRPCRouter({
     }
   }),
 
-  // get user's current tracker
+  // get user's current tracker (full details)
   getTracker: protectedProcedure.query(async ({ ctx }) => {
     try {
       const tracker = await ctx.db.query.trackedRepos.findFirst({
@@ -230,8 +235,9 @@ export const trackerRouter = createTRPCRouter({
             enableAiSummary: input.enableAiSummary,
             prTrackBranch: input.prTargetBranch,
             lastActivitySignature: initialSignature,
-            lastActivityData: activityData,
             lastCheckedAt: new Date(),
+            isActive: true,
+            isPaused: false,
           })
           .returning();
 
@@ -249,6 +255,161 @@ export const trackerRouter = createTRPCRouter({
         };
       }
     }),
+
+  // update tracker preferences
+  updatePreferences: protectedProcedure
+    .input(updateTrackerSchema)
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const existingTracker = await ctx.db.query.trackedRepos.findFirst({
+          where: eq(trackedRepos.userId, ctx.session.user.id),
+        });
+
+        if (!existingTracker) {
+          return {
+            data: null,
+            error: "not_found",
+            message: "no tracker found",
+          };
+        }
+
+        // serialize event config if events are being updated
+        let trackedEvents: string[] | undefined;
+        if (
+          input.prEvent ||
+          input.issueEvent ||
+          input.trackNewContributor !== undefined ||
+          input.trackNewFork !== undefined ||
+          input.trackNewRelease !== undefined
+        ) {
+          trackedEvents = serializeEventConfig(input as CreateTrackerInput);
+
+          if (trackedEvents.length === 0) {
+            return {
+              data: null,
+              error: "no_events",
+              message: "please select at least one event to track",
+            };
+          }
+
+          if (trackedEvents.length > 4) {
+            return {
+              data: null,
+              error: "too_many_events",
+              message: "maximum 4 events allowed",
+            };
+          }
+        }
+
+        // update tracker
+        const [updatedTracker] = await ctx.db
+          .update(trackedRepos)
+          .set({
+            ...(trackedEvents && { trackedEvents }),
+            ...(input.enableAiSummary !== undefined && {
+              enableAiSummary: input.enableAiSummary,
+            }),
+            ...(input.prTargetBranch !== undefined && {
+              prTrackBranch: input.prTargetBranch,
+            }),
+            ...(input.isPaused !== undefined && { isPaused: input.isPaused }),
+            updatedAt: new Date(),
+          })
+          .where(eq(trackedRepos.id, existingTracker.id))
+          .returning();
+
+        return {
+          data: updatedTracker,
+          error: null,
+          message: "tracker updated successfully",
+        };
+      } catch (error) {
+        console.error("[tracker] update error:", error);
+        return {
+          data: null,
+          error: "failed to update tracker",
+          message: "error updating tracker",
+        };
+      }
+    }),
+
+  // pause tracker
+  pause: protectedProcedure.mutation(async ({ ctx }) => {
+    try {
+      const existingTracker = await ctx.db.query.trackedRepos.findFirst({
+        where: eq(trackedRepos.userId, ctx.session.user.id),
+      });
+
+      if (!existingTracker) {
+        return {
+          data: null,
+          error: "not_found",
+          message: "no tracker found",
+        };
+      }
+
+      const [updatedTracker] = await ctx.db
+        .update(trackedRepos)
+        .set({
+          isPaused: true,
+          updatedAt: new Date(),
+        })
+        .where(eq(trackedRepos.id, existingTracker.id))
+        .returning();
+
+      return {
+        data: updatedTracker,
+        error: null,
+        message: "tracker paused successfully",
+      };
+    } catch (error) {
+      console.error("[tracker] pause error:", error);
+      return {
+        data: null,
+        error: "failed to pause tracker",
+        message: "error pausing tracker",
+      };
+    }
+  }),
+
+  // resume tracker
+  resume: protectedProcedure.mutation(async ({ ctx }) => {
+    try {
+      const existingTracker = await ctx.db.query.trackedRepos.findFirst({
+        where: eq(trackedRepos.userId, ctx.session.user.id),
+      });
+
+      if (!existingTracker) {
+        return {
+          data: null,
+          error: "not_found",
+          message: "no tracker found",
+        };
+      }
+
+      const [updatedTracker] = await ctx.db
+        .update(trackedRepos)
+        .set({
+          isPaused: false,
+          updatedAt: new Date(),
+        })
+        .where(eq(trackedRepos.id, existingTracker.id))
+        .returning();
+
+      return {
+        data: updatedTracker,
+        error: null,
+        message: "tracker resumed successfully",
+      };
+    } catch (error) {
+      console.error("[tracker] resume error:", error);
+      return {
+        data: null,
+        error: "failed to resume tracker",
+        message: "error resuming tracker",
+      };
+    }
+  }),
 
   // delete tracker
   delete: protectedProcedure.mutation(async ({ ctx }) => {
@@ -310,6 +471,8 @@ export const trackerRouter = createTRPCRouter({
           tracker,
           totalEvents: eventCount.length,
           trackedSince: tracker.trackedSince,
+          lastCheckedAt: tracker.lastCheckedAt,
+          isPaused: tracker.isPaused,
         },
         error: null,
         message: "stats fetched successfully",
@@ -323,4 +486,72 @@ export const trackerRouter = createTRPCRouter({
       };
     }
   }),
+
+  getEvents: protectedProcedure
+    .input(
+      z.object({
+        limit: z.number().min(1).max(100).default(20),
+        offset: z.number().min(0).default(0),
+        eventType: z.string().optional(),
+        sortOrder: z.enum(["asc", "desc"]).default("desc"),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      try {
+        const tracker = await ctx.db.query.trackedRepos.findFirst({
+          where: eq(trackedRepos.userId, ctx.session.user.id),
+        });
+
+        if (!tracker) {
+          return {
+            data: null,
+            error: "not_found",
+            message: "no tracker found",
+          };
+        }
+
+        // Build where conditions
+        const conditions = [eq(eventsLog.trackedRepoId, tracker.id)];
+        if (input.eventType) {
+          conditions.push(eq(eventsLog.eventType, input.eventType));
+        }
+
+        // Get total count
+        const totalEvents = await ctx.db
+          .select()
+          .from(eventsLog)
+          .where(and(...conditions));
+
+        // Get paginated events
+        const events = await ctx.db
+          .select()
+          .from(eventsLog)
+          .where(and(...conditions))
+          .orderBy(
+            input.sortOrder === "desc"
+              ? desc(eventsLog.detectedAt)
+              : asc(eventsLog.detectedAt),
+          )
+          .limit(input.limit)
+          .offset(input.offset);
+
+        return {
+          data: {
+            events,
+            total: totalEvents.length,
+            limit: input.limit,
+            offset: input.offset,
+          },
+          error: null,
+          message: "events fetched successfully",
+        };
+      } catch (error) {
+        console.error("[tracker] get events error:", error);
+        return {
+          data: null,
+          error: "failed to fetch events",
+          message: "error fetching events",
+        };
+      }
+    }),
 });

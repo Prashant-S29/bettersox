@@ -70,6 +70,11 @@ export interface RepoActivityData {
         updatedAt: string;
         closedAt: string | null;
         author: { login: string };
+        labels: {
+          nodes: Array<{
+            name: string;
+          }>;
+        };
       }>;
     };
     releases: {
