@@ -31,6 +31,7 @@ import { db } from "~/lib/storage";
 // tRPC
 import { api } from "~/trpc/react";
 import Link from "next/link";
+import { usePledgeStatus } from "~/hooks/usePledgeStatus";
 
 interface ParsedResult {
   filters: SearchFilters;
@@ -43,20 +44,15 @@ export const NLPSearchBar: React.FC = () => {
   const [parsedResult, setParsedResult] = useState<ParsedResult | null>(null);
   const [defaultLanguages, setDefaultLanguages] = useState<string[]>([]);
   const [defaultFrameworks, setDefaultFrameworks] = useState<string[]>([]);
-  const [pledgeSigned, setPledgeSigned] = useState(false);
-  const [pledgeLoading, setPledgeLoading] = useState(true);
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Load pledge status and user preferences on mount
+  const { pledgeLoading, pledgeSigned } = usePledgeStatus();
+
+  // load user preferences on mount
   useEffect(() => {
     const loadData = async () => {
       try {
-        setPledgeLoading(true);
-
-        // Load pledge status
-        const pledgeStatus = await db.getPledgeStatus();
-        setPledgeSigned(pledgeStatus?.signed ?? false);
-
         // Load preferences
         const prefs = await db.getPreferences();
         if (prefs) {
@@ -65,8 +61,6 @@ export const NLPSearchBar: React.FC = () => {
         }
       } catch (error) {
         console.error("Error loading data:", error);
-      } finally {
-        setPledgeLoading(false);
       }
     };
 

@@ -39,7 +39,6 @@ import {
   BarChart3Icon,
   ChevronLeft,
   RefreshCwIcon,
-  ArrowRightIcon,
 } from "lucide-react";
 
 const TrackerDashboard: React.FC = () => {
@@ -54,7 +53,7 @@ const TrackerDashboard: React.FC = () => {
     refetch: refetchTracker,
     isFetching: isFetchingTracker,
   } = api.tracker.getTracker.useQuery(undefined, {
-    refetchInterval: 30000, // refetch every 30 seconds
+    refetchInterval: 30000,
   });
 
   const {
@@ -72,6 +71,7 @@ const TrackerDashboard: React.FC = () => {
     onSuccess: () => {
       toast.success("Tracker paused");
       void utils.tracker.getTracker.invalidate();
+      void utils.tracker.getTrackerMetadata.invalidate();
     },
     onError: () => {
       toast.error("Failed to pause tracker");
@@ -82,6 +82,7 @@ const TrackerDashboard: React.FC = () => {
     onSuccess: () => {
       toast.success("Tracker resumed");
       void utils.tracker.getTracker.invalidate();
+      void utils.tracker.getTrackerMetadata.invalidate();
     },
     onError: () => {
       toast.error("Failed to resume tracker");
@@ -91,6 +92,8 @@ const TrackerDashboard: React.FC = () => {
   const deleteMutation = api.tracker.delete.useMutation({
     onSuccess: () => {
       toast.success("Tracker deleted successfully");
+      void utils.tracker.getTracker.invalidate();
+      void utils.tracker.getTrackerMetadata.invalidate();
       router.push("/track");
     },
     onError: () => {
@@ -100,7 +103,6 @@ const TrackerDashboard: React.FC = () => {
 
   const tracker = trackerData?.data;
   const events = (eventsData?.data?.events ?? []) as Event[];
-  const totalEvents = eventsData?.data?.total ?? 0;
 
   const handleRefresh = async () => {
     await Promise.all([refetchTracker(), refetchEvents()]);
@@ -128,10 +130,45 @@ const TrackerDashboard: React.FC = () => {
           </div>
         </div>
 
-        <Card className="p-6">
-          <Skeleton className="h-8 w-full" />
-          <Skeleton className="mt-4 h-4 w-3/4" />
-          <Skeleton className="mt-2 h-4 w-1/2" />
+        <Card className="gap-5 p-0">
+          <div className="flex items-start justify-between px-5 pt-5">
+            <div className="flex w-full flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <GitBranchIcon className="text-muted-foreground h-4 w-4" />
+                  <Skeleton className="h-3 w-[100px]" />
+                </div>
+                <Skeleton className="h-5 w-[100px]" />
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <Skeleton className="h-3 w-[80px]" />
+                <Skeleton className="h-3 w-[80px]" />
+              </div>
+            </div>
+          </div>
+          <Separator />
+          <div className="flex items-center gap-3 px-5">
+            <h3 className="text-sm font-medium">Currently Tracking:</h3>
+            <div className="flex flex-wrap gap-2">
+              <Skeleton className="h-3 w-[80px]" />
+              <Skeleton className="h-3 w-[80px]" />
+              <Skeleton className="h-3 w-[80px]" />
+            </div>
+          </div>
+
+          <Separator />
+
+          <div className="flex items-center justify-between gap-2 px-5 pb-5">
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-7 w-[80px]" />
+              <Skeleton className="h-7 w-[80px]" />
+            </div>
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-7 w-[80px]" />
+              <Skeleton className="h-7 w-[80px]" />
+            </div>
+          </div>
         </Card>
       </Container>
     );
@@ -198,17 +235,6 @@ const TrackerDashboard: React.FC = () => {
             </p>
           </div>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-        >
-          <RefreshCwIcon
-            className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
-          />
-          Refresh
-        </Button>
       </div>
 
       <Card className="gap-5 p-0">
@@ -337,35 +363,26 @@ const TrackerDashboard: React.FC = () => {
       <Card className="p-6">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-lg font-semibold">Recent Activity</h3>
-          {totalEvents > 10 && (
-            <Button size="sm" variant="outline" asChild>
-              <Link href={`/track/${trackerId}/status`}>
-                View All {totalEvents} Events
-                <ArrowRightIcon className="h-4 w-4" />
-              </Link>
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            size="smaller"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+          >
+            <RefreshCwIcon
+              className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+            />
+            Refresh
+          </Button>
         </div>
 
-        {isLoadingEvents ? (
-          <div className="space-y-4">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-64 w-full" />
-          </div>
-        ) : events.length === 0 ? (
-          <div className="text-muted-foreground text-center text-sm">
-            <p>No events detected yet</p>
-            <p className="mt-1 text-xs">
-              We&apos;ll notify you when something happens in your repository
-            </p>
-          </div>
-        ) : (
-          <EventsDataTable
-            columns={columns}
-            data={events}
-            trackedEvents={tracker.trackedEvents}
-          />
-        )}
+        <EventsDataTable
+          columns={columns}
+          data={events}
+          trackedEvents={tracker.trackedEvents}
+          isRecentView={true}
+          isLoading={isLoadingEvents}
+        />
       </Card>
     </Container>
   );

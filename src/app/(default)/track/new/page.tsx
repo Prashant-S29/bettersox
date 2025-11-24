@@ -60,6 +60,8 @@ import { formatDate } from "~/lib/utils/date-parser";
 
 const NewTracker: React.FC = () => {
   const router = useRouter();
+  const utils = api.useUtils();
+
   const [step, setStep] = useState<1 | 2>(1);
   const [repoMetadata, setRepoMetadata] = useState<RepoMetadata | null>(null);
 
@@ -105,6 +107,8 @@ const NewTracker: React.FC = () => {
         return;
       }
       toast.success(result.message);
+      void utils.tracker.getTracker.invalidate();
+      void utils.tracker.getTrackerMetadata.invalidate();
       router.push("/track");
     },
     onError: (error) => {
@@ -291,36 +295,20 @@ const NewTracker: React.FC = () => {
     );
   }
 
-  return (
-    <Container className="flex flex-col gap-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="flex flex-col gap-5">
-            {step === 2 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleBack}
-                disabled={createTrackerMutation.isPending}
-                className="w-fit"
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Setup
-              </Button>
-            )}
-            <h1 className="text-lg font-semibold">
-              {step === 1 ? "Verify Repository" : "Configure Tracking"}
-            </h1>
+  if (step === 1) {
+    return (
+      <Container className="flex flex-col gap-6">
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="flex flex-col gap-5">
+              <h1 className="text-lg font-semibold">Verify Repository</h1>
+            </div>
+            <p className="text-muted-foreground text-sm">
+              Enter the github repository url you want to track
+            </p>
           </div>
-          <p className="text-muted-foreground text-sm">
-            {step === 1
-              ? "Enter the github repository url you want to track"
-              : `Setting up tracker for ${repoMetadata?.fullName}`}
-          </p>
         </div>
-      </div>
 
-      {step === 1 && (
         <Form {...verifyForm}>
           <form
             onSubmit={verifyForm.handleSubmit(handleVerifyRepo)}
@@ -377,14 +365,60 @@ const NewTracker: React.FC = () => {
             </section>
           </form>
         </Form>
-      )}
+      </Container>
+    );
+  }
 
-      {step === 2 && repoMetadata && (
+  return (
+    <Container className="flex flex-col gap-6">
+      {repoMetadata && (
         <Form {...configForm}>
           <form
             onSubmit={configForm.handleSubmit(handleConfigSubmit)}
             className="space-y-6"
           >
+            <div className="flex flex-col gap-5">
+              <Button
+                variant="outline"
+                size="icon-sm"
+                onClick={handleBack}
+                disabled={createTrackerMutation.isPending}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <div className="flex justify-between w-full">
+                <div>
+                  <h1 className="text-lg font-semibold">Configure Tracking</h1>
+                  <p className="text-muted-foreground text-sm">
+                    Setting up tracker for {repoMetadata?.fullName}
+                  </p>
+                </div>
+
+                <div className="flex justify-end gap-3">
+                  <div className="flex justify-end gap-3">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={handleBack}
+                      disabled={createTrackerMutation.isPending}
+                    >
+                      Back
+                    </Button>
+                    <Button
+                      type="submit"
+                      size="sm"
+                      disabled={createTrackerMutation.isPending || !isFormValid}
+                      loading={createTrackerMutation.isPending}
+                      onClick={configForm.handleSubmit(handleConfigSubmit)}
+                    >
+                      Start Tracking
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div className="bg-muted/50 rounded-lg border p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -975,29 +1009,6 @@ const NewTracker: React.FC = () => {
                 </p>
               </div>
             )}
-
-            <div className="flex justify-end gap-3">
-              <div className="flex justify-end gap-3">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={handleBack}
-                  disabled={createTrackerMutation.isPending}
-                >
-                  Back
-                </Button>
-                <Button
-                  type="submit"
-                  size="sm"
-                  disabled={createTrackerMutation.isPending || !isFormValid}
-                  loading={createTrackerMutation.isPending}
-                  onClick={configForm.handleSubmit(handleConfigSubmit)}
-                >
-                  Start Tracking
-                </Button>
-              </div>
-            </div>
           </form>
         </Form>
       )}

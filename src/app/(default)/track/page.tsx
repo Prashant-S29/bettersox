@@ -19,12 +19,15 @@ import { Skeleton } from "~/components/ui/skeleton";
 const Track: React.FC = () => {
   const { data: session, isPending } = authClient.useSession();
 
-  const { data: trackerData, isLoading } =
-    api.tracker.getTrackerMetadata.useQuery(undefined, {
-      enabled: !!session?.user,
-    });
+  const {
+    data: trackerData,
+    isLoading,
+    isRefetching,
+  } = api.tracker.getTrackerMetadata.useQuery(undefined, {
+    enabled: !!session?.user,
+  });
 
-  if (isLoading || isPending) {
+  if (isLoading || isPending || isRefetching) {
     return (
       <Container className="flex flex-col gap-6">
         <div className="flex items-center justify-between">
@@ -37,12 +40,30 @@ const Track: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex flex-col gap-2 rounded-lg border p-2">
-          <Skeleton className="h-6 w-full max-w-[300px]" />
-          <div className="flex flex-col gap-1">
+        <div className="bg-card flex items-center justify-between gap-9 rounded-lg border p-3">
+          <div className="flex w-full flex-col gap-2">
             <Skeleton className="h-3 w-full max-w-[500px]" />
-            <Skeleton className="h-3 w-full max-w-[500px]" />
-            <Skeleton className="h-3 w-full max-w-[500px]" />
+            <Skeleton className="h-3 w-full max-w-[800px]" />
+          </div>
+
+          <Button variant="secondary" size="smaller" disabled>
+            <PlusIcon />
+            Create Tracker
+          </Button>
+        </div>
+
+        <div className="grid w-full grid-cols-2 gap-3">
+          <div className="bg-card group flex flex-col gap-2 rounded-lg border p-3">
+            <Skeleton className="h-4 w-full max-w-[100px]" />
+            <Skeleton className="h-3 w-full max-w-[300px]" />
+          </div>
+          <div className="bg-card group flex flex-col gap-2 rounded-lg border p-3">
+            <Skeleton className="h-4 w-full max-w-[100px]" />
+            <Skeleton className="h-3 w-full max-w-[300px]" />
+          </div>
+          <div className="bg-card group flex flex-col gap-2 rounded-lg border p-3">
+            <Skeleton className="h-4 w-full max-w-[100px]" />
+            <Skeleton className="h-3 w-full max-w-[300px]" />
           </div>
         </div>
       </Container>
@@ -101,7 +122,7 @@ const Track: React.FC = () => {
           <div>
             <p className="text-sm font-medium">No active tracker found</p>
             <p className="text-muted-foreground text-sm">
-              Create your first tracker to get started.
+              Create a tracker to get started.
             </p>
           </div>
           <Button variant="secondary" size="smaller" asChild>

@@ -1,7 +1,6 @@
 "use client";
 
 import { type ColumnDef } from "@tanstack/react-table";
-import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
   ExternalLinkIcon,
@@ -50,14 +49,6 @@ const getEventIcon = (type: string) => {
   return icons[type] ?? <CircleDot size={18} />;
 };
 
-const formatEventType = (type: string) => {
-  return type
-    .replace(/_/g, " ")
-    .split(" ")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-};
-
 export const columns: ColumnDef<Event>[] = [
   {
     accessorKey: "eventType",
@@ -77,43 +68,15 @@ export const columns: ColumnDef<Event>[] = [
   },
   {
     accessorKey: "title",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-auto bg-transparent! p-0!"
-        >
-          Event
-          <ArrowUpDown className="h-4 w-4" />
-        </Button>
-      );
-    },
+    header: "Event",
     cell: ({ row }) => {
       const eventData = row.original.eventData;
       return <p className="font-medium text-wrap">{eventData.title}</p>;
     },
-    filterFn: (row, id, value: string) => {
-      const eventData = row.original.eventData;
-      return eventData.title.toLowerCase().includes(value.toLowerCase());
-    },
   },
   {
     accessorKey: "author",
-    header: ({ column }) => {
-      return (
-        <div className="">
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="h-auto bg-transparent! p-0!"
-          >
-            Author
-            <ArrowUpDown className="h-4 w-4" />
-          </Button>
-        </div>
-      );
-    },
+    header: "Author",
     cell: ({ row }) => {
       const author = row.original.eventData.author;
       return <p className="text-sm">{author}</p>;
@@ -144,17 +107,20 @@ export const columns: ColumnDef<Event>[] = [
   },
   {
     id: "actions",
-    header: () => <div className="text-right">Action</div>,
+    header: "",
     cell: ({ row }) => {
       const url = row.original.eventData.url;
       return (
-        <div className="text-right">
-          <Button size="icon-sm" variant="ghost" asChild>
-            <Link href={url} target="_blank" rel="noopener noreferrer">
-              <ExternalLinkIcon className="h-4 w-4" />
-            </Link>
-          </Button>
-        </div>
+        <Button size="icon-sm" variant="ghost" asChild>
+          <Link
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-muted-foreground"
+          >
+            <ExternalLinkIcon className="h-4 w-4" />
+          </Link>
+        </Button>
       );
     },
   },

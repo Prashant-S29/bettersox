@@ -292,35 +292,96 @@ const ManageTracker: React.FC = () => {
   if (isLoadingTracker || isLoadingMetadata) {
     return (
       <Container className="flex flex-col gap-6">
-        <div className="flex items-start justify-between">
-          <div className="flex flex-col gap-5">
-            <Button
-              variant="outline"
-              size="icon-sm"
-              onClick={() => {
-                router.push("/track");
-              }}
-              disabled={updateMutation.isPending}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
+        <div className="flex flex-col gap-5">
+          <Button variant="outline" type="button" size="icon-sm" disabled>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <div className="flex w-full justify-between">
             <div>
               <h1 className="text-lg font-semibold">Manage Tracker</h1>
               <div className="flex items-center gap-2">
                 <p className="text-muted-foreground text-sm">
                   Update tracking configuration for
                 </p>
-                <Skeleton className="h-4 w-[100px]" />
+                <Skeleton className="h-3 w-[100px]" />
               </div>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <Button type="button" size="smaller" variant="outline" disabled>
+                Cancel
+              </Button>
+              <Button type="submit" size="smaller" disabled>
+                Save Changes
+              </Button>
             </div>
           </div>
         </div>
-        <Skeleton className="h-8 w-64" />
-        <div className="space-y-4">
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-32 w-full" />
+
+        <div className="bg-muted/50 rounded-lg border p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <Skeleton className="h-3 w-[100px]" />
+              <Skeleton className="mt-1 h-3 w-[100px]" />
+            </div>
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-4 w-[80px]" />
+              <Skeleton className="h-4 w-[80px]" />
+            </div>
+          </div>
         </div>
+
+        <section className="bg-sidebar rounded-lg border">
+          <div className="flex items-center justify-between px-5 pt-4 pb-3">
+            <div>
+              <h2 className="font-medium">Pull Requests</h2>
+              <p className="text-muted-foreground text-sm">
+                Select a pull request event to track
+              </p>
+            </div>
+          </div>
+          <div>
+            <Separator />
+            <div className="flex flex-col gap-1 px-5 py-4">
+              <Skeleton className="h-4 w-[300px]" />
+              <Skeleton className="h-4 w-[300px]" />
+            </div>
+          </div>
+        </section>
+        <section className="bg-sidebar rounded-lg border">
+          <div className="flex items-center justify-between px-5 pt-4 pb-3">
+            <div>
+              <h2 className="font-medium">Issues</h2>
+              <p className="text-muted-foreground text-sm">
+                Select an issue event to track
+              </p>
+            </div>
+          </div>
+          <div>
+            <Separator />
+            <div className="flex flex-col gap-1 px-5 py-4">
+              <Skeleton className="h-4 w-[300px]" />
+              <Skeleton className="h-4 w-[300px]" />
+            </div>
+          </div>
+        </section>
+        <section className="bg-sidebar rounded-lg border">
+          <div className="flex items-center justify-between px-5 pt-4 pb-3">
+            <div>
+              <h2 className="font-medium">Additional Options</h2>
+              <p className="text-muted-foreground text-sm">
+                Additional events to track
+              </p>
+            </div>
+          </div>
+          <div>
+            <Separator />
+            <div className="flex flex-col gap-1 px-5 py-4">
+              <Skeleton className="h-4 w-[300px]" />
+              <Skeleton className="h-4 w-[300px]" />
+            </div>
+          </div>
+        </section>
       </Container>
     );
   }
@@ -370,46 +431,80 @@ const ManageTracker: React.FC = () => {
 
   return (
     <Container className="flex flex-col gap-6">
-      <div className="flex items-start justify-between">
-        <div className="flex flex-col gap-5">
-          <Button
-            variant="outline"
-            size="icon-sm"
-            onClick={() => {
-              if (hasUnsavedChanges) {
-                const confirmed = window.confirm(
-                  "You have unsaved changes. Are you sure you want to leave?",
-                );
-                if (!confirmed) return;
-              }
-              router.push(`/track/${trackerId}`);
-            }}
-            disabled={updateMutation.isPending}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-lg font-semibold">Manage Tracker</h1>
-            <p className="text-muted-foreground text-sm">
-              Update tracking configuration for {tracker.repoFullName}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {branchWarning && (
-        <Alert variant="destructive">
-          <AlertTriangleIcon className="h-4 w-4" />
-          <AlertTitle>Branch No Longer Available</AlertTitle>
-          <AlertDescription>{branchWarning}</AlertDescription>
-        </Alert>
-      )}
-
       <Form {...configForm}>
         <form
           onSubmit={configForm.handleSubmit(handleConfigSubmit)}
           className="space-y-6"
         >
+          <div className="flex flex-col gap-5">
+            <Button
+              variant="outline"
+              type="button"
+              size="icon-sm"
+              onClick={() => {
+                if (hasUnsavedChanges) {
+                  const confirmed = window.confirm(
+                    "You have unsaved changes. Are you sure you want to leave?",
+                  );
+                  if (!confirmed) return;
+                }
+                router.push(`/track/${trackerId}`);
+              }}
+              disabled={updateMutation.isPending}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <div className="flex w-full justify-between">
+              <div>
+                <h1 className="text-lg font-semibold">Manage Tracker</h1>
+                <p className="text-muted-foreground text-sm">
+                  Update tracking configuration for {tracker.repoFullName}
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <Button
+                  type="button"
+                  size="smaller"
+                  variant="outline"
+                  onClick={() => {
+                    if (hasUnsavedChanges) {
+                      const confirmed = window.confirm(
+                        "You have unsaved changes. Are you sure you want to cancel?",
+                      );
+                      if (!confirmed) return;
+                    }
+                    router.push(`/track/${trackerId}`);
+                  }}
+                  disabled={updateMutation.isPending}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  size="smaller"
+                  disabled={
+                    updateMutation.isPending ||
+                    !isFormValid ||
+                    !hasUnsavedChanges
+                  }
+                  loading={updateMutation.isPending}
+                >
+                  {hasUnsavedChanges
+                    ? "Save Changes (unsaved)"
+                    : "Save Changes"}
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {branchWarning && (
+            <Alert variant="destructive">
+              <AlertTriangleIcon className="h-4 w-4" />
+              <AlertTitle>Branch No Longer Available</AlertTitle>
+              <AlertDescription>{branchWarning}</AlertDescription>
+            </Alert>
+          )}
           <div className="bg-muted/50 rounded-lg border p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -994,36 +1089,6 @@ const ManageTracker: React.FC = () => {
               </p>
             </div>
           )}
-
-          <div className="flex justify-end gap-3">
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                if (hasUnsavedChanges) {
-                  const confirmed = window.confirm(
-                    "You have unsaved changes. Are you sure you want to cancel?",
-                  );
-                  if (!confirmed) return;
-                }
-                router.push(`/track/${trackerId}`);
-              }}
-              disabled={updateMutation.isPending}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              size="sm"
-              disabled={
-                updateMutation.isPending || !isFormValid || !hasUnsavedChanges
-              }
-              loading={updateMutation.isPending}
-            >
-              {hasUnsavedChanges ? "Save Changes (unsaved)" : "Save Changes"}
-            </Button>
-          </div>
         </form>
       </Form>
     </Container>

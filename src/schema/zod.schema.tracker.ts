@@ -1,5 +1,6 @@
 // src/schema/zod.schema.tracker.ts
 import { z } from "zod";
+import { normalizeGitHubUrl } from "~/lib/github";
 import { ISSUE_EVENTS, PR_EVENTS } from "~/types/types.tracker";
 
 const githubUrlRegex =
@@ -7,10 +8,24 @@ const githubUrlRegex =
 
 // step 1: verify repo
 export const verifyRepoSchema = z.object({
-  repoUrl: z.string().url().regex(githubUrlRegex, {
-    message:
-      "must be a valid github repository url (e.g., https://github.com/owner/repo)",
-  }),
+  repoUrl: z
+    .string()
+    .min(1, "Repository URL is required")
+    .transform((url) => normalizeGitHubUrl({ url }))
+    .refine(
+      (url) => {
+        try {
+          new URL(url);
+          return githubUrlRegex.test(url);
+        } catch {
+          return false;
+        }
+      },
+      {
+        message:
+          "Must be a valid GitHub repository URL, https and ssh supported.",
+      },
+    ),
 });
 
 export type VerifyRepoInput = z.infer<typeof verifyRepoSchema>;
@@ -129,7 +144,9 @@ export type UpdateTrackerInput = z.infer<typeof updateTrackerSchema>;
 export function parseGitHubUrl(
   url: string,
 ): { owner: string; name: string } | null {
-  const match = githubUrlRegex.exec(url);
+  // Normalize the URL first
+  const normalizedUrl = normalizeGitHubUrl({url});
+  const match = githubUrlRegex.exec(normalizedUrl);
   if (!match) return null;
   const [, owner, name] = match;
   return { owner: owner!, name: name! };
