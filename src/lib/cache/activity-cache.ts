@@ -1,11 +1,6 @@
-import { Redis } from "@upstash/redis";
-import { env } from "~/env";
 import type { RepoActivityData } from "~/types/github";
+import { redis } from "~/lib/redis/client";
 
-const redis = new Redis({
-  url: env.UPSTASH_REDIS_REST_URL,
-  token: env.UPSTASH_REDIS_REST_TOKEN,
-});
 
 const CACHE_TTL = 60 * 10; // 10 minutes
 

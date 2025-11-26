@@ -3,7 +3,6 @@ import { clearCachedActivity } from "~/lib/cache/activity-cache";
 import { env } from "~/env";
 
 export async function POST(request: Request) {
-  // Only allow in development
   if (env.NODE_ENV !== "development") {
     return NextResponse.json(
       { error: "This endpoint is only available in development" },

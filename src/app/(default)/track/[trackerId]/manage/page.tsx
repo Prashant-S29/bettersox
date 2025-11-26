@@ -124,7 +124,6 @@ const ManageTracker: React.FC = () => {
       enableAiSummary: tracker.enableAiSummary,
     };
 
-    // Parse PR events
     const prEvent = events.find(
       (e) =>
         e === PR_EVENTS.NEW_PR ||
@@ -140,7 +139,6 @@ const ManageTracker: React.FC = () => {
           eventType as (typeof PR_EVENTS)[keyof typeof PR_EVENTS];
         formValues.prTargetBranch = branch;
 
-        // check if branch still exists
         if (metadata && !metadata.branches.includes(branch!)) {
           setBranchWarning(
             `The branch "${branch}" is no longer available in ${metadata.fullName}. Please update your tracking configuration.`,

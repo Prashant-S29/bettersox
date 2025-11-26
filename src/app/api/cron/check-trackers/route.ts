@@ -1,4 +1,3 @@
-// src/app/api/cron/check-trackers/route.ts
 import { NextResponse } from "next/server";
 import { db } from "~/server/db";
 import { trackedRepos } from "~/server/db/schema/db.schema.tracker";
@@ -13,14 +12,12 @@ export async function GET(request: Request) {
   const startTime = Date.now();
 
   try {
-    // Validate cron request
     if (!validateCronRequest(request)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     console.log("[Cron] Starting tracker check job...");
 
-    // Acquire distributed lock
     const lockAcquired = await acquireLock(LOCK_NAME);
 
     if (!lockAcquired) {
@@ -33,7 +30,6 @@ export async function GET(request: Request) {
     }
 
     try {
-      // Fetch all active trackers
       const activeTrackers = await db.query.trackedRepos.findMany({
         where: eq(trackedRepos.isActive, true),
         columns: {
@@ -54,13 +50,10 @@ export async function GET(request: Request) {
         });
       }
 
-      // Extract tracker IDs
       const trackerIds = activeTrackers.map((t) => t.id);
 
-      // Process trackers in batches
       const results = await processTrackersBatch(trackerIds, 5);
 
-      // Calculate statistics
       const totalEvents = results.reduce((sum, r) => sum + r.eventsDetected, 0);
       const errors = results.filter((r) => r.error).length;
       const successful = results.length - errors;
@@ -89,13 +82,11 @@ export async function GET(request: Request) {
         })),
       });
     } finally {
-      // Always release lock
       await releaseLock(LOCK_NAME);
     }
   } catch (error) {
     console.error("[Cron] Job failed:", error);
 
-    // Try to release lock even on error
     try {
       await releaseLock(LOCK_NAME);
     } catch (lockError) {

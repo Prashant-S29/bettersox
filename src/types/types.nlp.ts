@@ -1,4 +1,3 @@
-// src/types/types.nlp.ts
 import type { SearchFiltersSchemaType } from "~/schema";
 
 export type SearchFilters = SearchFiltersSchemaType;

@@ -1,4 +1,3 @@
-// src/lib/github/client.ts
 import { env } from "~/env";
 
 const GITHUB_GRAPHQL_ENDPOINT = "https://api.github.com/graphql";
@@ -66,4 +65,4 @@ export class GitHubClient {
 }
 
 // singleton instance
-export const githubClient = new GitHubClient(env.GITHUB_TOKEN);
+export const githubClient = new GitHubClient(env.GITHUB_PAT);

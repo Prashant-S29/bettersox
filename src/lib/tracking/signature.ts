@@ -1,4 +1,3 @@
-// src/lib/tracking/signature.ts
 import { createHash } from "crypto";
 import type { RepoActivityData } from "~/types/github";
 

@@ -1,4 +1,3 @@
-// src/schema/schema.searchFilters.ts
 import { z } from "zod";
 
 export const SearchFiltersSchema = z.object({

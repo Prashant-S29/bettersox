@@ -1,5 +1,6 @@
 import { eq, and } from "drizzle-orm";
 import { db } from "~/server/db";
+import { user as users } from "~/server/db/schema/db.schema.user";
 import { trackedRepos, eventsLog } from "~/server/db/schema/db.schema.tracker";
 import { getRepoActivity } from "~/lib/github/queries";
 import { generateActivitySignature } from "./signature";
@@ -8,8 +9,9 @@ import {
   getCachedActivity,
   setCachedActivity,
 } from "~/lib/cache/activity-cache";
-import type { RepoActivityData } from "~/types/github";
 import { createHash } from "crypto";
+
+import { queueEmailNotification } from "~/lib/email/queue";
 
 interface ProcessResult {
   trackerId: string;
@@ -168,6 +170,48 @@ export async function processTracker(
     console.log(
       `[Tracker] ${tracker.repoFullName} - ${newEventsCount} new events logged (${detectedEvents.length - newEventsCount} duplicates skipped)`,
     );
+
+    // Queue email notification if there are new events
+    if (newEventsCount > 0) {
+      try {
+        // Get user info
+        const user = await db.query.user.findFirst({
+          where: eq(users.id, tracker.userId),
+        });
+
+        if (user?.email) {
+          await queueEmailNotification({
+            trackerId: tracker.id,
+            userId: tracker.userId,
+            userEmail: user.email,
+            userName: user.name,
+            repoFullName: tracker.repoFullName,
+            events: detectedEvents.slice(0, newEventsCount).map((event) => ({
+              id: generateEventHash(event),
+              type: event.type,
+              title: event.title,
+              url: event.url,
+              author: event.author,
+              timestamp: event.timestamp,
+            })),
+          });
+
+          console.log(
+            `[Tracker] ${tracker.repoFullName} - Queued email notification`,
+          );
+        } else {
+          console.warn(
+            `[Tracker] ${tracker.repoFullName} - No email found for user ${tracker.userId}`,
+          );
+        }
+      } catch (emailError) {
+        console.error(
+          `[Tracker] ${tracker.repoFullName} - Failed to queue email:`,
+          emailError,
+        );
+        // Don't fail the entire process if email queuing fails
+      }
+    }
 
     // Update tracker with new signature
     await db

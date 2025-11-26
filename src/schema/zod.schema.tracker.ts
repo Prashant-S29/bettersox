@@ -1,4 +1,3 @@
-// src/schema/zod.schema.tracker.ts
 import { z } from "zod";
 import { normalizeGitHubUrl } from "~/lib/github";
 import { ISSUE_EVENTS, PR_EVENTS } from "~/types/types.tracker";

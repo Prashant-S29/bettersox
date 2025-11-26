@@ -1,10 +1,4 @@
-import { Redis } from "@upstash/redis";
-import { env } from "~/env";
-
-const redis = new Redis({
-  url: env.UPSTASH_REDIS_REST_URL,
-  token: env.UPSTASH_REDIS_REST_TOKEN,
-});
+import { redis } from "~/lib/redis/client";
 
 const LOCK_TTL = 300; // 5 minutes in seconds
 

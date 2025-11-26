@@ -45,7 +45,6 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
   const [showMissingFilters, setShowMissingFilters] = useState(true);
   const bookmarked = isBookmarked(repository.id);
 
-  // Load user preferences
   useEffect(() => {
     const loadPreferences = async () => {
       try {
@@ -88,7 +87,6 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
     }
   };
 
-  // Check if any filters are missing
   const hasMissingFilters =
     repository.missingFilters.frameworks.length > 0 ||
     repository.missingFilters.libraries.length > 0 ||

@@ -1,13 +1,13 @@
 import { z } from "zod";
 import { createTRPCRouter } from "~/server/api/trpc";
-import { publicProcedure } from "../procedure";
+import { searchProcedure } from "../procedure";
 import { searchRepositories } from "~/lib/github/queries";
 import { buildGitHubSearchQuery } from "~/lib/github/query-builder";
 import { SearchFiltersSchema } from "~/schema";
 import type { EnrichedRepository } from "~/types/github";
 
 export const searchRouter = createTRPCRouter({
-  repositories: publicProcedure
+  repositories: searchProcedure
     .input(
       z.object({
         filters: SearchFiltersSchema,

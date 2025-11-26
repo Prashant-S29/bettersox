@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
 // icons
@@ -13,7 +14,6 @@ import { db, type PledgeStatus } from "~/lib/storage";
 import { Button } from "~/components/ui/button";
 import { Container } from "~/components/common";
 import { toast } from "sonner";
-import Link from "next/link";
 
 const OpenSourcePledgePage: React.FC = () => {
   const router = useRouter();
@@ -105,7 +105,7 @@ const OpenSourcePledgePage: React.FC = () => {
       <div>
         <h1 className="text-lg font-semibold">Open Source Pledge</h1>
         <p className="text-muted-foreground text-sm">
-          Please read and sign this pledge before using BetterSOX
+          Please read and sign this pledge before using BetterSox
         </p>
       </div>
 

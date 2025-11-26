@@ -50,17 +50,14 @@ const SearchPage: React.FC = () => {
   const [pledgeSigned, setPledgeSigned] = useState(false);
   const [pledgeLoading, setPledgeLoading] = useState(true);
 
-  // Load pledge status and preferences
   useEffect(() => {
     const loadData = async () => {
       try {
         setPledgeLoading(true);
 
-        // Load pledge status
         const pledgeStatus = await db.getPledgeStatus();
         setPledgeSigned(pledgeStatus?.signed ?? false);
 
-        // Load preferences
         const prefs = await db.getPreferences();
         if (prefs) {
           setSortBy(prefs.sortBy);
@@ -141,7 +138,6 @@ const SearchPage: React.FC = () => {
   };
 
   const handleReadPledge = () => {
-    // Get current URL path with search params
     const currentPath = window.location.pathname + window.location.search;
     const encodedPath = encodeURIComponent(currentPath);
     router.push(`/open-source-pledge?redirectTo=${encodedPath}`);
@@ -155,7 +151,6 @@ const SearchPage: React.FC = () => {
     );
   }
 
-  // Show pledge requirement if not signed
   if (!pledgeSigned) {
     return (
       <Container className="flex min-h-screen items-center justify-center">

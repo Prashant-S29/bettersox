@@ -1,7 +1,6 @@
-// src/server/api/routers/route.tracker.ts
 import { eq, desc, asc, and } from "drizzle-orm";
 import { createTRPCRouter } from "~/server/api/trpc";
-import { protectedProcedure, publicProcedure } from "~/server/api/procedure";
+import { trackerProcedure, generalProcedure } from "~/server/api/procedure";
 import { trackedRepos, eventsLog } from "~/server/db/schema/db.schema.tracker";
 import {
   createTrackerSchema,
@@ -54,8 +53,8 @@ function serializeEventConfig(input: CreateTrackerInput): string[] {
 }
 
 export const trackerRouter = createTRPCRouter({
-  // verify and get repo metadata
-  verifyRepo: publicProcedure
+  // verify and get repo metadata (public with rate limit)
+  verifyRepo: generalProcedure
     .input(verifyRepoSchema)
     .query(async ({ input }) => {
       try {
@@ -112,8 +111,8 @@ export const trackerRouter = createTRPCRouter({
       }
     }),
 
-  // get user's current tracker metadata
-  getTrackerMetadata: protectedProcedure.query(async ({ ctx }) => {
+  // get user's current tracker metadata (protected with rate limit)
+  getTrackerMetadata: trackerProcedure.query(async ({ ctx }) => {
     try {
       const tracker = await ctx.db.query.trackedRepos.findFirst({
         where: eq(trackedRepos.userId, ctx.session.user.id),
@@ -147,8 +146,8 @@ export const trackerRouter = createTRPCRouter({
     }
   }),
 
-  // get user's current tracker (full details)
-  getTracker: protectedProcedure.query(async ({ ctx }) => {
+  // get user's current tracker (protected with rate limit)
+  getTracker: trackerProcedure.query(async ({ ctx }) => {
     try {
       const tracker = await ctx.db.query.trackedRepos.findFirst({
         where: eq(trackedRepos.userId, ctx.session.user.id),
@@ -169,8 +168,8 @@ export const trackerRouter = createTRPCRouter({
     }
   }),
 
-  // create a new tracker
-  create: protectedProcedure
+  // create a new tracker (protected with rate limit)
+  create: trackerProcedure
     .input(createTrackerSchema)
     .mutation(async ({ ctx, input }) => {
       try {
@@ -256,8 +255,8 @@ export const trackerRouter = createTRPCRouter({
       }
     }),
 
-  // update tracker preferences
-  updatePreferences: protectedProcedure
+  // update tracker preferences (protected with rate limit)
+  updatePreferences: trackerProcedure
     .input(updateTrackerSchema)
     .mutation(async ({ ctx, input }) => {
       try {
@@ -333,8 +332,8 @@ export const trackerRouter = createTRPCRouter({
       }
     }),
 
-  // pause tracker
-  pause: protectedProcedure.mutation(async ({ ctx }) => {
+  // pause tracker (protected with rate limit)
+  pause: trackerProcedure.mutation(async ({ ctx }) => {
     try {
       const existingTracker = await ctx.db.query.trackedRepos.findFirst({
         where: eq(trackedRepos.userId, ctx.session.user.id),
@@ -372,8 +371,8 @@ export const trackerRouter = createTRPCRouter({
     }
   }),
 
-  // resume tracker
-  resume: protectedProcedure.mutation(async ({ ctx }) => {
+  // resume tracker (protected with rate limit)
+  resume: trackerProcedure.mutation(async ({ ctx }) => {
     try {
       const existingTracker = await ctx.db.query.trackedRepos.findFirst({
         where: eq(trackedRepos.userId, ctx.session.user.id),
@@ -411,8 +410,8 @@ export const trackerRouter = createTRPCRouter({
     }
   }),
 
-  // delete tracker
-  delete: protectedProcedure.mutation(async ({ ctx }) => {
+  // delete tracker (protected with rate limit)
+  delete: trackerProcedure.mutation(async ({ ctx }) => {
     try {
       const existingTracker = await ctx.db.query.trackedRepos.findFirst({
         where: eq(trackedRepos.userId, ctx.session.user.id),
@@ -445,8 +444,8 @@ export const trackerRouter = createTRPCRouter({
     }
   }),
 
-  // get tracker statistics
-  getStats: protectedProcedure.query(async ({ ctx }) => {
+  // get tracker statistics (protected with rate limit)
+  getStats: trackerProcedure.query(async ({ ctx }) => {
     try {
       const tracker = await ctx.db.query.trackedRepos.findFirst({
         where: eq(trackedRepos.userId, ctx.session.user.id),
@@ -487,7 +486,8 @@ export const trackerRouter = createTRPCRouter({
     }
   }),
 
-  getEvents: protectedProcedure
+  // get events (protected with rate limit)
+  getEvents: trackerProcedure
     .input(
       z.object({
         limit: z.number().min(1).max(100).default(20),

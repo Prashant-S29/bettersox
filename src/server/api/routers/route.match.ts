@@ -8,11 +8,11 @@ import { searchRepositories } from "~/lib/github/queries";
 import type { GitHubRepository, ScoredRepository } from "~/types/github";
 
 // procedure
-import { publicProcedure } from "../procedure";
+import { generalProcedure } from "../procedure";
 import { MatchInputSchema } from "~/schema";
 
 export const matchRouter = createTRPCRouter({
-  findMatches: publicProcedure
+  findMatches: generalProcedure
     .input(MatchInputSchema)
     .query(async ({ input }) => {
       try {

@@ -7,19 +7,15 @@ type FeatureFlag = {
   isNew?: boolean;
 };
 
-// Tracker Configuration
+export const MAX_USER_QUERY_LENGTH = 50;
+
+export const LOGO =
+  "https://9jb1v1y2ig.ufs.sh/f/091oe9IncF3wAwJGx7z45D9ifEGN28PyqYMKVnIQudZhTX3C";
 
 export const TRACKER_CONFIG = {
-  // Check for activity changes every 5 minutes
   POLL_INTERVAL_MINUTES: 5,
-
-  // Look back 30 minutes for new events (increased from default)
   ACTIVITY_CHECK_LOOKBACK: 30,
-
-  // Maximum error count before deactivating tracker
   MAX_ERROR_COUNT: 10,
-
-  // Batch size for processing trackers
   BATCH_SIZE: 5,
 } as const;
 
@@ -40,7 +36,7 @@ export const featureFlags: Record<string, FeatureFlag> = {
     label: "Profile",
   },
   track: {
-    enabled: true, // Enable the track feature
+    enabled: true,
     beta: false,
     experimental: false,
     isNew: true,

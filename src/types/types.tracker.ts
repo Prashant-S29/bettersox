@@ -1,5 +1,3 @@
-// src/types/types.tracker.ts
-
 // All trackable events combined
 export const TRACKABLE_EVENTS = {
   // PR events
@@ -8,21 +6,21 @@ export const TRACKABLE_EVENTS = {
   PR_MERGED_TO_BRANCH: "pr_merged_to_branch",
   PR_MERGED: "pr_merged", // Generic PR merged (any branch)
   MERGE_TO_MAIN: "merge_to_main", // Alias for PR_MERGED_TO_DEFAULT
-  
+
   // Issue events
   NEW_ISSUE: "new_issue",
   NEW_ISSUE_WITH_TAG: "new_issue_with_tag",
   NEW_ISSUE_WITH_CUSTOM_TAG: "new_issue_with_custom_tag",
-  
+
   // Social/Community events
   NEW_CONTRIBUTOR: "new_contributor",
   NEW_FORK: "new_fork",
   STARS_MILESTONE: "stars_milestone",
-  
+
   // Release events
   NEW_RELEASE: "new_release",
   NEW_PRE_RELEASE: "new_pre_release",
-  
+
   // Branch events
   NEW_BRANCH: "new_branch",
 } as const;
@@ -48,7 +46,8 @@ export const SOCIAL_EVENTS = {
   NEW_RELEASE: TRACKABLE_EVENTS.NEW_RELEASE,
 } as const;
 
-export type TrackableEvent = (typeof TRACKABLE_EVENTS)[keyof typeof TRACKABLE_EVENTS];
+export type TrackableEvent =
+  (typeof TRACKABLE_EVENTS)[keyof typeof TRACKABLE_EVENTS];
 export type PrEvent = (typeof PR_EVENTS)[keyof typeof PR_EVENTS];
 export type IssueEvent = (typeof ISSUE_EVENTS)[keyof typeof ISSUE_EVENTS];
 export type SocialEvent = (typeof SOCIAL_EVENTS)[keyof typeof SOCIAL_EVENTS];

@@ -4,6 +4,10 @@
     {
       "path": "/api/cron/check-trackers",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/queue/send-email",
+      "schedule": "*/2 * * * *"
     }
   ]
 }
