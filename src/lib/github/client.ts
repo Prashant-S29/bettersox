@@ -65,4 +65,4 @@ export class GitHubClient {
 }
 
 // singleton instance
-export const githubClient = new GitHubClient(env.GITHUB_PAT);
+export const githubClient = new GitHubClient(env.GITHUB_TOKEN);
