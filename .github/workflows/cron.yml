@@ -1,0 +1,31 @@
+name: Cron Jobs
+
+on:
+  schedule:
+    # Check trackers every 5 minutes
+    - cron: '*/5 * * * *'
+    # Note: GitHub Actions cron has minimum 5 minute interval
+  workflow_dispatch:  # Allows manual trigger from GitHub UI
+
+jobs:
+  check-trackers:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger check-trackers endpoint
+        run: |
+          curl -X GET "https://bettersox.vercel.app/api/cron/check-trackers" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -f || exit 1
+
+  send-emails:
+    runs-on: ubuntu-latest
+    needs: check-trackers  # Run after check-trackers
+    steps:
+      - name: Wait 2 minutes before sending emails
+        run: sleep 120
+        
+      - name: Trigger send-email endpoint
+        run: |
+          curl -X GET "https://bettersox.vercel.app/api/queue/send-email" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -f || exit 1
