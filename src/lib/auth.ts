@@ -17,6 +17,11 @@ export const auth = betterAuth({
       clientSecret: env.GITHUB_CLIENT_SECRET,
     },
   },
+  trustedOrigins: [
+    "http://localhost:3000", // local
+    "https://bettersox.vercel.app", // prod
+    "https://bettersox-staging.vercel.app", // staging
+  ],
   advanced: {
     database: {
       generateId: false,
