@@ -8,26 +8,36 @@ const isLocal = process.env.NODE_ENV === "development";
 const isStaging = process.env.VERCEL_ENV === "preview";
 const isProduction = process.env.VERCEL_ENV === "production";
 
+// API paths that bypass staging cookie check (have their own auth)
+const STAGING_BYPASS_PATHS = ["/api/cron/", "/api/queue/"];
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (isStaging) {
-    // Check staging cookie on EVERY request
-    const stagingCookie = request.cookies.get("staging_secret");
-    const isAuthorizedForStaging =
-      stagingCookie?.value === process.env.STAGING_SECRET;
+    // Check if path should bypass staging cookie check
+    const shouldBypassStagingCheck = STAGING_BYPASS_PATHS.some((path) =>
+      pathname.startsWith(path),
+    );
 
-    if (!isAuthorizedForStaging) {
-      // API routes: Return 403
-      if (pathname.startsWith("/api/")) {
-        return NextResponse.json(
-          { error: "Forbidden - Staging access required" },
-          { status: 403 },
-        );
+    if (!shouldBypassStagingCheck) {
+      // Check staging cookie on EVERY other request
+      const stagingCookie = request.cookies.get("staging_secret");
+      const isAuthorizedForStaging =
+        stagingCookie?.value === process.env.STAGING_SECRET;
+
+      if (!isAuthorizedForStaging) {
+        // API routes: Return 403
+        if (pathname.startsWith("/api/")) {
+          return NextResponse.json(
+            { error: "Forbidden - Staging access required" },
+            { status: 403 },
+          );
+        }
+
+        // Page routes: Redirect to /staging
+        return NextResponse.redirect(new URL("/staging", request.url));
       }
-
-      // Page routes: Redirect to /staging
-      return NextResponse.redirect(new URL("/staging", request.url));
     }
   }
 
