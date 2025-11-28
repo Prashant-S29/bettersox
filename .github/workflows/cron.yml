@@ -15,6 +15,7 @@ jobs:
         run: |
           curl -X GET "https://bettersox.vercel.app/api/cron/check-trackers" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "x-vercel-protection-bypass: ${{ secrets.VERCEL_PROTECTION_BYPASS }}" \
             -f || exit 1
 
   send-emails:
@@ -28,4 +29,5 @@ jobs:
         run: |
           curl -X GET "https://bettersox.vercel.app/api/queue/send-email" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "x-vercel-protection-bypass: ${{ secrets.VERCEL_PROTECTION_BYPASS }}" \
             -f || exit 1
