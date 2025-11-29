@@ -27,7 +27,7 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
+  // FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -961,7 +961,7 @@ const NewTracker: React.FC = () => {
               </div>
             </section>
 
-            <section className="bg-sidebar rounded-lg border">
+            {/* <section className="bg-sidebar rounded-lg border">
               <div className="px-5 pt-4 pb-3">
                 <h2 className="font-medium">AI Summaries</h2>
               </div>
@@ -991,7 +991,7 @@ const NewTracker: React.FC = () => {
                   )}
                 />
               </div>
-            </section>
+            </section> */}
 
             {!isFormValid && selectedEventsCount > 0 && (
               <div className="bg-destructive/10 border-destructive/20 rounded-lg border p-4">
