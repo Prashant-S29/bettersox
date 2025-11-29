@@ -4,8 +4,11 @@ import { createTRPCRouter } from "~/server/api/trpc";
 import { env } from "~/env";
 import { SearchFiltersSchema, type SearchFiltersSchemaType } from "~/schema";
 import { publicProcedure } from "../procedure";
+import { TRPCError } from "@trpc/server";
 
 const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
+
+const MAX_CHARS = 3000;
 
 const SYSTEM_PROMPT = `You are an AI assistant specialized in parsing natural language queries for GitHub open source project searches. Your ONLY task is to extract filters from user queries and return them as structured JSON data.
 
@@ -149,8 +152,17 @@ Now parse the following user query:`;
 
 export const queryRouter = createTRPCRouter({
   parseQuery: publicProcedure
-    .input(z.object({ query: z.string().min(1) }))
+    .input(z.object({ query: z.string().min(1).max(MAX_CHARS) }))
     .mutation(async ({ input }) => {
+      const charCount = input.query.length;
+      if (charCount > MAX_CHARS) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Query is too long. Maximum ${MAX_CHARS} characters allowed. You used ${charCount} characters.`,
+          cause: { charCount, maxChars: MAX_CHARS },
+        });
+      }
+
       try {
         const model = genAI.getGenerativeModel({
           model: "gemini-2.5-flash-lite",

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { db, type Bookmark } from "~/lib/storage";
-import type { GitHubRepository } from "~/lib/github/client";
+import type { GitHubRepository } from "~/types/github";
 
 export function useBookmarks() {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);

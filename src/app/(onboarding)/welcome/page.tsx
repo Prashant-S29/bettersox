@@ -52,7 +52,7 @@ const Welcome: React.FC<WelcomeProps> = async ({ searchParams }) => {
           <div>
             <h3 className="font-medium">Our Vision</h3>
             <p className="text-muted-foreground text-sm">
-              With BetterSox, we only aim to reduce the initial friction for new
+              With BetterSox, we aim to reduce the initial friction for new
               developers to contribute to open source projects. We want to make
               it easy for developers to find projects that align with their
               interests and skills.

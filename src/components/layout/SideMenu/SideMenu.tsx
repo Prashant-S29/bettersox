@@ -109,7 +109,6 @@ export const SideMenu: React.FC = () => {
   const [pledgeSigned, setPledgeSigned] = useState(false);
   const [, setPledgeLoading] = useState(true);
 
-  // Load pledge status
   useEffect(() => {
     <SidebarSeparator />;
 

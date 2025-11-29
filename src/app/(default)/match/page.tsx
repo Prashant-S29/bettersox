@@ -56,10 +56,10 @@ const MatchPage: React.FC = () => {
 
   // Show success toast when matches are found
   useEffect(() => {
-    if (matchResults && matchResults.totalCount > 0) {
+    if (matchResults?.data && matchResults.data.totalCount > 0) {
       toast.success(matchResults.message);
     }
-  }, [matchResults]);
+  }, [matchResults?.data, matchResults?.message]);
 
   if (loading) {
     return (
@@ -159,14 +159,15 @@ const MatchPage: React.FC = () => {
             />
           ))}
         </div>
-      ) : matchResults && matchResults.repositories.length > 0 ? (
+      ) : matchResults?.data && matchResults.data.repositories.length > 0 ? (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-muted-foreground text-sm">
-              {matchResults.totalCount} repositories matched (showing top 50)
+              {matchResults.data.totalCount} repositories matched (showing top
+              50)
             </p>
           </div>
-          {matchResults.repositories.map((repo) => (
+          {matchResults.data.repositories.map((repo) => (
             <div key={repo.id} className="space-y-2">
               <RepositoryCard repository={repo} hideMissingFilters />
             </div>

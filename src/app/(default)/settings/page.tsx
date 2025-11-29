@@ -4,7 +4,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 // icons
-import { Loader2Icon, MoonIcon, SunIcon, MonitorIcon } from "lucide-react";
+import { Loader2Icon } from "lucide-react";
 
 // components
 import { Button } from "~/components/ui/button";
@@ -35,12 +35,9 @@ import {
 // libs
 import { db, type UserPreferences } from "~/lib/storage";
 
-// hooks
-import { useTheme } from "next-themes";
 
 const SettingsPage: React.FC = () => {
   const router = useRouter();
-  const { setTheme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [originalPreferences, setOriginalPreferences] =
@@ -66,7 +63,6 @@ const SettingsPage: React.FC = () => {
   const [languageInput, setLanguageInput] = useState("");
   const [frameworkInput, setFrameworkInput] = useState("");
 
-  // Unsaved changes dialog
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(
     null,
@@ -141,11 +137,6 @@ const SettingsPage: React.FC = () => {
     setShowUnsavedDialog(false);
     await handleSave();
   }, [handleSave]);
-
-  const handleThemeChange = (value: "light" | "dark" | "system") => {
-    setTheme(value);
-    setPreferences({ ...preferences, theme: value });
-  };
 
   const handleAddLanguage = () => {
     if (
@@ -233,42 +224,6 @@ const SettingsPage: React.FC = () => {
         </div>
 
         <div className="space-y-8">
-          <section className="bg-card flex items-center justify-between rounded-lg border p-3 pl-6">
-            <h2>Appearance</h2>
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <Select
-                  value={preferences.theme}
-                  onValueChange={handleThemeChange}
-                >
-                  <SelectTrigger id="theme">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="light">
-                      <div className="flex items-center gap-2">
-                        <SunIcon className="h-4 w-4" />
-                        Light
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="dark">
-                      <div className="flex items-center gap-2">
-                        <MoonIcon className="h-4 w-4" />
-                        Dark
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="system">
-                      <div className="flex items-center gap-2">
-                        <MonitorIcon className="h-4 w-4" />
-                        System
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </section>
-
           <section className="bg-card flex flex-col rounded-lg border">
             <div className="px-6 py-5">
               <h2>Default Filters</h2>

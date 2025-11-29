@@ -1,7 +1,7 @@
 import { db } from "./db";
 import type { CachedSearch, SearchHistoryItem } from "./db";
 import type { SearchFilters } from "~/types";
-import type { GitHubRepository } from "~/lib/github/client";
+import type { GitHubRepository } from "~/types/github";
 
 // Cache expiration time (1 hour)
 const CACHE_DURATION = 60 * 60 * 1000;
