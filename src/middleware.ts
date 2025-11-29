@@ -8,7 +8,6 @@ const isLocal = process.env.NODE_ENV === "development";
 const isStaging = process.env.VERCEL_ENV === "preview";
 const isProduction = process.env.VERCEL_ENV === "production";
 
-// API paths that bypass staging cookie check (have their own auth)
 const STAGING_BYPASS_PATHS = ["/api/cron/", "/api/queue/"];
 
 export async function middleware(request: NextRequest) {
@@ -27,7 +26,6 @@ export async function middleware(request: NextRequest) {
         stagingCookie?.value === process.env.STAGING_SECRET;
 
       if (!isAuthorizedForStaging) {
-        // API routes: Return 403
         if (pathname.startsWith("/api/")) {
           return NextResponse.json(
             { error: "Forbidden - Staging access required" },
@@ -35,7 +33,6 @@ export async function middleware(request: NextRequest) {
           );
         }
 
-        // Page routes: Redirect to /staging
         return NextResponse.redirect(new URL("/staging", request.url));
       }
     }

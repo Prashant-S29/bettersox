@@ -2,9 +2,8 @@ name: Cron Jobs
 
 on:
   schedule:
-    # Check trackers every 5 minutes (only runs on default branch: main)
     - cron: '*/5 * * * *'
-  workflow_dispatch:  # Allows manual trigger from any branch
+  workflow_dispatch:  
 
 jobs:
   check-trackers:
