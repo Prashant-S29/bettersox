@@ -1,7 +1,6 @@
 import type { RepoActivityData } from "~/types/github";
 import { redis } from "~/lib/redis/client";
 
-
 const CACHE_TTL = 60 * 10; // 10 minutes
 
 /**
@@ -47,7 +46,6 @@ export async function setCachedActivity(
     const key = `activity:${owner}/${name}`;
     // Store as JSON string
     await redis.set(key, JSON.stringify(data), { ex: CACHE_TTL });
-    console.log(`[Cache] Cached activity for ${owner}/${name}`);
   } catch (error) {
     console.error(
       `[Cache] Failed to cache activity for ${owner}/${name}:`,
@@ -66,7 +64,6 @@ export async function clearCachedActivity(
   try {
     const key = `activity:${owner}/${name}`;
     await redis.del(key);
-    console.log(`[Cache] Cleared cache for ${owner}/${name}`);
   } catch (error) {
     console.error(`[Cache] Failed to clear cache for ${owner}/${name}:`, error);
   }

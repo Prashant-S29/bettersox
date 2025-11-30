@@ -38,9 +38,6 @@ export async function sendEventNotification(
       return { success: false, error: result.error.message };
     }
 
-    console.log(
-      `[Email] Sent successfully to ${job.userEmail} - ID: ${result.data?.id}`,
-    );
     return { success: true, messageId: result.data?.id };
   } catch (error) {
     console.error("[Email] Exception while sending:", error);

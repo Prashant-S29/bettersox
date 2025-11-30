@@ -109,25 +109,25 @@ InterestBadge.displayName = "InterestBadge";
 
 const ProfilePage: React.FC = () => {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // states
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [, startTransition] = useTransition();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
   const [profileData, setProfileData] =
     useState<ProfileFormData>(initialFormData);
   const [originalData, setOriginalData] =
     useState<ProfileFormData>(initialFormData);
-
   const [newSkillInput, setNewSkillInput] = useState("");
   const [newInterestInput, setNewInterestInput] = useState("");
-
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(
     null,
   );
 
+  // mutations
   const parseResumeMutation = api.resumeParser.parseResume.useMutation();
 
   const hasUnsavedChanges = useMemo(() => {

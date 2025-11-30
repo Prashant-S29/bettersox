@@ -73,7 +73,6 @@ const BookmarksPage: React.FC = () => {
                     codeOfConduct: false,
                     issueTemplates: false,
                   },
-
                 };
 
                 return (

@@ -2,9 +2,6 @@ import { redis } from "~/lib/redis/client";
 
 const LOCK_TTL = 300; // 5 minutes in seconds
 
-/**
- * Acquire a distributed lock
- */
 export async function acquireLock(lockName: string): Promise<boolean> {
   try {
     const key = `lock:${lockName}`;
@@ -31,7 +28,6 @@ export async function releaseLock(lockName: string): Promise<void> {
   try {
     const key = `lock:${lockName}`;
     await redis.del(key);
-    console.log(`[Lock] Released lock "${lockName}"`);
   } catch (error) {
     console.error(`[Lock] Failed to release lock "${lockName}":`, error);
   }

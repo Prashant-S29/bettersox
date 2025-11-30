@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
-import { getSessionCookie } from "better-auth/cookies";
 
 import type { NextRequest } from "next/server";
-import { featureFlags, protectedRoutes } from "~/constants";
+import { featureFlags } from "~/constants";
 
 const isLocal = process.env.NODE_ENV === "development";
 const isStaging = process.env.VERCEL_ENV === "preview";
@@ -40,18 +39,6 @@ export async function middleware(request: NextRequest) {
 
   // prod
   if (isProduction && pathname === "/staging") {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
-
-  let isAuthenticated = false;
-  const sessionCookie = getSessionCookie(request);
-  isAuthenticated = !!sessionCookie;
-
-  const isProtectedRoute = protectedRoutes.some((route) =>
-    pathname.startsWith(route),
-  );
-
-  if (isProtectedRoute && !isAuthenticated) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 

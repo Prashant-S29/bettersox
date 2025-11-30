@@ -1,1 +1,1 @@
-export * from "./normalizeGitHubUrl"
+export * from "./normalizeGitHubUrl";

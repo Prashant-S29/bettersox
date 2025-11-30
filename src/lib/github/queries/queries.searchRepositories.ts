@@ -1,7 +1,6 @@
 import type { GraphQLSearchResult, GitHubSearchResponse } from "~/types/github";
 import { githubClient } from "../client";
 
-
 const SEARCH_REPOSITORIES_QUERY = `
   query SearchRepositories($query: String!, $first: Int!, $after: String) {
     search(query: $query, type: REPOSITORY, first: $first, after: $after) {

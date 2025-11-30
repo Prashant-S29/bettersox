@@ -18,6 +18,27 @@ export class GitHubClient {
     this.token = token;
   }
 
+  private hasRateLimit(
+    obj: unknown,
+  ): obj is {
+    rateLimit: { remaining: number; cost: number; resetAt: string };
+  } {
+    if (typeof obj !== "object" || obj === null || !("rateLimit" in obj)) {
+      return false;
+    }
+
+    const record = obj as Record<string, unknown>;
+    const rateLimit = record.rateLimit;
+
+    return (
+      typeof rateLimit === "object" &&
+      rateLimit !== null &&
+      "remaining" in rateLimit &&
+      "cost" in rateLimit &&
+      "resetAt" in rateLimit
+    );
+  }
+
   async query<T extends object>(
     query: string,
     variables?: Record<string, unknown>,
@@ -50,12 +71,10 @@ export class GitHubClient {
       throw new Error(`graphql errors: ${JSON.stringify(data.errors)}`);
     }
 
-    // log rate limit if available (type-safe)
-    const result = data.data as T & {
-      rateLimit?: { remaining: number; cost: number; resetAt: string };
-    };
-    if (result.rateLimit) {
-      console.log(
+    // log rate limit if available
+    const result = data.data;
+    if (this.hasRateLimit(result)) {
+      console.warn(
         `[github api] rate limit: ${result.rateLimit.remaining}/5000, cost: ${result.rateLimit.cost}, resets at: ${result.rateLimit.resetAt}`,
       );
     }

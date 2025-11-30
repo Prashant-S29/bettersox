@@ -68,7 +68,6 @@ const OpenSourcePledgePage: React.FC = () => {
       setPledgeStatus(pledge);
       toast.success("Pledge signed successfully!");
 
-      // Redirect to the original page or home
       setTimeout(() => {
         if (redirectTo) {
           router.push(redirectTo);

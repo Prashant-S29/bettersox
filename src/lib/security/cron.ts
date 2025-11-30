@@ -10,7 +10,7 @@ import { env } from "~/env";
 export function validateCronRequest(request: Request): boolean {
   // In development, allow without secret
   if (env.NODE_ENV === "development") {
-    console.log("[Cron] Running in development mode - skipping auth");
+    console.warn("[Cron] Running in development mode - skipping auth");
     return true;
   }
 
@@ -41,6 +41,5 @@ export function validateCronRequest(request: Request): boolean {
     return false;
   }
 
-  console.log("[Cron] Successfully validated cron request");
   return true;
 }

@@ -22,9 +22,7 @@ export default function StagingLayout({
   return (
     <html lang="en" className={`${geist.variable}`}>
       <body>
-        <Provider>
-          {children}
-        </Provider>
+        <Provider>{children}</Provider>
       </body>
     </html>
   );

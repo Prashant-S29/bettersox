@@ -24,7 +24,6 @@ export const featureFlags: Record<string, FeatureFlag> = {
     enabled: true,
     beta: false,
     experimental: false,
-    isNew: true,
     href: "/match",
     label: "Match",
   },
