@@ -144,7 +144,7 @@ export function parseGitHubUrl(
   url: string,
 ): { owner: string; name: string } | null {
   // Normalize the URL first
-  const normalizedUrl = normalizeGitHubUrl({url});
+  const normalizedUrl = normalizeGitHubUrl({ url });
   const match = githubUrlRegex.exec(normalizedUrl);
   if (!match) return null;
   const [, owner, name] = match;

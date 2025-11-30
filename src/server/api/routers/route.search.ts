@@ -21,17 +21,11 @@ export const searchRouter = createTRPCRouter({
         // build github search query
         const searchQuery = buildGitHubSearchQuery(input.filters);
 
-        console.log("[search] github search query:", searchQuery);
-
         // search github
         const result = await searchRepositories(
           searchQuery,
           input.perPage,
           input.cursor ?? undefined,
-        );
-
-        console.log(
-          `[search] fetched ${result.repositories.length} repositories from github`,
         );
 
         // enrich repositories with missing filter information
@@ -65,10 +59,6 @@ export const searchRouter = createTRPCRouter({
               },
             };
           },
-        );
-
-        console.log(
-          `[search] returning ${enrichedRepos.length} enriched repositories`,
         );
 
         return {

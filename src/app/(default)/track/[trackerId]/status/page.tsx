@@ -1,7 +1,9 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+
 import { api } from "~/trpc/react";
 
 // icons
@@ -14,7 +16,6 @@ import { Card } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
 import { EventsDataTable } from "~/components/common";
 import { columns, type Event } from "~/components/common/";
-import Link from "next/link";
 
 const StatusPage: React.FC = () => {
   const params = useParams();

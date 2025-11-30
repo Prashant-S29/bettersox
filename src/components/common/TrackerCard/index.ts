@@ -1,1 +1,1 @@
-export * from "./TrackerCard"
+export * from "./TrackerCard";
