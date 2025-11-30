@@ -109,25 +109,25 @@ InterestBadge.displayName = "InterestBadge";
 
 const ProfilePage: React.FC = () => {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // states
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [, startTransition] = useTransition();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
   const [profileData, setProfileData] =
     useState<ProfileFormData>(initialFormData);
   const [originalData, setOriginalData] =
     useState<ProfileFormData>(initialFormData);
-
   const [newSkillInput, setNewSkillInput] = useState("");
   const [newInterestInput, setNewInterestInput] = useState("");
-
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(
     null,
   );
 
+  // mutations
   const parseResumeMutation = api.resumeParser.parseResume.useMutation();
 
   const hasUnsavedChanges = useMemo(() => {
@@ -486,7 +486,7 @@ const ProfilePage: React.FC = () => {
           </div>
         </header>
 
-        <section className="bg-card rounded-lg border p-6">
+        <section className="bg-sidebar rounded-lg border p-6">
           {profileData.resumeFileName ? (
             <div className="flex items-center justify-between">
               <div>
@@ -551,7 +551,7 @@ const ProfilePage: React.FC = () => {
           )}
         </section>
 
-        <section className="bg-card rounded-lg border">
+        <section className="bg-sidebar rounded-lg border">
           <div className="px-6 pt-5 pb-4">
             <h2 id="personal-info">Personal Information</h2>
           </div>
@@ -613,7 +613,7 @@ const ProfilePage: React.FC = () => {
           </div>
         </section>
 
-        <section className="bg-card rounded-lg border">
+        <section className="bg-sidebar rounded-lg border">
           <div className="px-6 pt-5 pb-4">
             <h2 id="professional-info">Professional Information</h2>
           </div>
@@ -687,7 +687,7 @@ const ProfilePage: React.FC = () => {
           </div>
         </section>
 
-        <section className="bg-card rounded-lg border">
+        <section className="bg-sidebar rounded-lg border">
           <div className="px-6 pt-5 pb-4">
             <h2 id="skills-section">
               Skills <span className="text-destructive">*</span>
@@ -733,7 +733,7 @@ const ProfilePage: React.FC = () => {
           </div>
         </section>
 
-        <section className="bg-card rounded-lg border">
+        <section className="bg-sidebar rounded-lg border">
           <div className="px-6 pt-5 pb-4">
             <h2 id="interests-section">Interests & Topics</h2>
           </div>
@@ -778,7 +778,7 @@ const ProfilePage: React.FC = () => {
           </div>
         </section>
 
-        <section className="bg-card rounded-lg border">
+        <section className="bg-sidebar rounded-lg border">
           <div className="px-6 pt-5 pb-4">
             <h2 id="links-section">Links</h2>
           </div>

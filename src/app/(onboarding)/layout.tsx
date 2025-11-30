@@ -8,7 +8,7 @@ import { Toaster } from "~/components/ui/sonner";
 export const metadata: Metadata = {
   title: "Onboarding | BetterSox",
   description:
-    "A better way to find open source project with advance filters and more. All for free and no signups required.",
+    "A better way to find open source project with advance filters and more. All for free and no signup required.",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 

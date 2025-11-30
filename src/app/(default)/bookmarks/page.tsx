@@ -3,7 +3,7 @@
 import React from "react";
 
 // types
-import type { EnrichedRepository } from "~/server/api/routers/search";
+import type { EnrichedRepository } from "~/types/github";
 
 // hooks
 import { useRouter } from "next/navigation";

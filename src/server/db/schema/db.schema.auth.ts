@@ -1,13 +1,15 @@
 import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
-import { user } from "./user";
+import { user } from "./db.schema.user";
 
 export const session = pgTable("session", {
   id: uuid("id").defaultRandom().primaryKey(),
-  orgSlug: text("org_slug"),
   expiresAt: timestamp("expires_at").notNull(),
   token: text("token").notNull().unique(),
-  createdAt: timestamp("created_at").notNull(),
-  updatedAt: timestamp("updated_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
   userId: uuid("user_id")
@@ -29,8 +31,11 @@ export const account = pgTable("account", {
   refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
   scope: text("scope"),
   password: text("password"),
-  createdAt: timestamp("created_at").notNull(),
-  updatedAt: timestamp("updated_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
 });
 
 export const verification = pgTable("verification", {
@@ -38,6 +43,9 @@ export const verification = pgTable("verification", {
   identifier: text("identifier").notNull(),
   value: text("value").notNull(),
   expiresAt: timestamp("expires_at").notNull(),
-  createdAt: timestamp("created_at"),
-  updatedAt: timestamp("updated_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
 });

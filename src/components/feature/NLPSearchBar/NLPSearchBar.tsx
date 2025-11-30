@@ -7,7 +7,11 @@ import React, {
   useRef,
   useEffect,
 } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+
+// tRPC
+import { api } from "~/trpc/react";
 
 // icons
 import { ArrowUpIcon, Loader2Icon } from "lucide-react";
@@ -24,13 +28,13 @@ import { Button } from "~/components/ui/button";
 
 // lib
 import { queryParser, filtersToSearchParams } from "~/lib/nlp";
-import type { SearchFilters } from "~/types";
-import { categories, exampleQueries } from "./data";
 import { db } from "~/lib/storage";
 
-// tRPC
-import { api } from "~/trpc/react";
-import Link from "next/link";
+// types
+import type { SearchFilters } from "~/types";
+
+import { MAX_USER_QUERY_LENGTH } from "~/constants";
+import { categories, exampleQueries } from "./data";
 
 interface ParsedResult {
   filters: SearchFilters;
@@ -45,19 +49,19 @@ export const NLPSearchBar: React.FC = () => {
   const [defaultFrameworks, setDefaultFrameworks] = useState<string[]>([]);
   const [pledgeSigned, setPledgeSigned] = useState(false);
   const [pledgeLoading, setPledgeLoading] = useState(true);
+  const [isQueryTooLong, setIsQueryTooLong] = useState(false);
+  const [filtersFound, setFiltersFound] = useState<boolean | null>(null);
+  const [queryError, setQueryError] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Load pledge status and user preferences on mount
   useEffect(() => {
     const loadData = async () => {
       try {
         setPledgeLoading(true);
 
-        // Load pledge status
         const pledgeStatus = await db.getPledgeStatus();
         setPledgeSigned(pledgeStatus?.signed ?? false);
 
-        // Load preferences
         const prefs = await db.getPreferences();
         if (prefs) {
           setDefaultLanguages(prefs.defaultLanguages);
@@ -85,7 +89,6 @@ export const NLPSearchBar: React.FC = () => {
 
   const parseQueryMutation = api.query.parseQuery.useMutation({
     onSuccess: (data) => {
-      // Merge AI-parsed filters with default preferences
       const mergedFilters: SearchFilters = {
         ...data.filters,
         languages: [
@@ -102,6 +105,7 @@ export const NLPSearchBar: React.FC = () => {
       });
     },
     onError: (error) => {
+      setQueryError(true);
       console.error("Failed to parse query:", error);
     },
   });
@@ -109,14 +113,30 @@ export const NLPSearchBar: React.FC = () => {
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       setQuery(e.target.value);
+      setFiltersFound(null);
+
+      if (e.target.value.trim().length > MAX_USER_QUERY_LENGTH) {
+        setIsQueryTooLong(true);
+      } else {
+        setIsQueryTooLong(false);
+      }
     },
     [],
   );
 
   const handleParse = useCallback(() => {
     if (!query.trim()) return;
+    if (isQueryTooLong) return;
+
+    if (detectedCategories.size > 0) {
+      setFiltersFound(true);
+    } else {
+      setFiltersFound(false);
+      return;
+    }
+
     parseQueryMutation.mutate({ query });
-  }, [query, parseQueryMutation]);
+  }, [query, isQueryTooLong, parseQueryMutation, detectedCategories]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -142,6 +162,7 @@ export const NLPSearchBar: React.FC = () => {
   }, [parsedResult, query, router]);
 
   const handleRetry = useCallback(() => {
+    setQueryError(false);
     if (!query.trim()) return;
     parseQueryMutation.mutate({ query });
   }, [query, parseQueryMutation]);
@@ -365,57 +386,76 @@ export const NLPSearchBar: React.FC = () => {
 
   return (
     <div className="flex w-full max-w-3xl flex-col gap-8">
-      <InputGroup>
-        <InputGroupTextarea
-          ref={textareaRef}
-          value={query}
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-          placeholder={
-            pledgeLoading
-              ? "Loading..."
-              : pledgeSigned
-                ? "I am looking for an open source project..."
-                : "Please sign the Open Source Pledge to use this tool"
-          }
-          disabled={isDisabled}
-        />
-
-        <InputGroupAddon
-          align="block-end"
-          className="mt-2 flex items-start justify-between"
+      <div className="relative">
+        <div
+          className={`bg-card absolute ${isQueryTooLong ? "-bottom-[50px]" : "bottom-8"} left-1/2 flex h-12 w-[98%] -translate-1/2 items-end justify-center rounded-lg border pb-1 duration-150`}
         >
-          <div className="flex flex-wrap gap-1">
-            {categories.map((category, index) => {
-              const isDetected = detectedCategories.has(category);
-              return (
-                <Badge
-                  key={index}
-                  variant="secondary"
-                  className={isDetected ? "border-primary border" : ""}
-                >
-                  {category}
-                </Badge>
-              );
-            })}
-          </div>
-          <InputGroupButton
-            onClick={handleParse}
-            disabled={isDisabled || !query.trim()}
-            variant="default"
-            className="rounded-full"
-            size="icon-xs"
-          >
-            {parseQueryMutation.isPending ? (
-              <Loader2Icon className="h-4 w-4 animate-spin" />
-            ) : (
-              <ArrowUpIcon className="h-4 w-4" />
-            )}
-            <span className="sr-only">Parse Query</span>
-          </InputGroupButton>
-        </InputGroupAddon>
-      </InputGroup>
+          <p className="text-center text-xs">
+            Query length exceeds the limit. Please shorten your query.
+          </p>
+        </div>
 
+        {filtersFound !== null && (
+          <div
+            className={`bg-card absolute ${filtersFound ? "bottom-8" : "-bottom-[50px]"} left-1/2 flex h-12 w-[98%] -translate-1/2 items-end justify-center rounded-lg border pb-1 duration-150`}
+          >
+            <p className="text-center text-xs">
+              Unable to find any filters, Please modify your query.
+            </p>
+          </div>
+        )}
+
+        <InputGroup className="bg-card!">
+          <InputGroupTextarea
+            ref={textareaRef}
+            value={query}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            placeholder={
+              pledgeLoading
+                ? "Loading..."
+                : pledgeSigned
+                  ? "I am looking for an open source project..."
+                  : "Please sign the Open Source Pledge to use this tool"
+            }
+            disabled={isDisabled}
+          />
+
+          <InputGroupAddon
+            align="block-end"
+            className="mt-2 flex items-start justify-between"
+          >
+            <div className="flex flex-wrap gap-1">
+              {categories.map((category, index) => {
+                const isDetected = detectedCategories.has(category);
+                return (
+                  <Badge
+                    key={index}
+                    variant="secondary"
+                    className={isDetected ? "border-primary border" : ""}
+                  >
+                    {category}
+                  </Badge>
+                );
+              })}
+            </div>
+            <InputGroupButton
+              onClick={handleParse}
+              disabled={isDisabled || !query.trim() || isQueryTooLong}
+              variant="default"
+              className="rounded-full"
+              size="icon-xs"
+            >
+              {parseQueryMutation.isPending ? (
+                <Loader2Icon className="h-4 w-4 animate-spin" />
+              ) : (
+                <ArrowUpIcon className="h-4 w-4" />
+              )}
+              <span className="sr-only">Parse Query</span>
+            </InputGroupButton>
+          </InputGroupAddon>
+        </InputGroup>
+      </div>
       {!pledgeSigned && !pledgeLoading && (
         <div className="bg-card flex items-center justify-between gap-9 rounded-lg border p-3">
           <div>
@@ -435,12 +475,12 @@ export const NLPSearchBar: React.FC = () => {
         </div>
       )}
 
-      {parseQueryMutation.isError && (
-        <div className="bg-card flex justify-between gap-9 rounded-lg border p-3">
+      {queryError && (
+        <div className="bg-card flex items-center justify-between gap-9 rounded-lg border p-3">
           <div>
-            <p className="text-destructive text-sm">Error in loading results</p>
+            <p className="text-primary text-sm">Error in loading results</p>
             <p className="text-muted-foreground text-sm">
-              {parseQueryMutation.error?.message ||
+              {parseQueryMutation.error?.message ??
                 "An unexpected error occurred. Please try again."}
             </p>
           </div>

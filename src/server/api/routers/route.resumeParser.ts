@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createTRPCRouter } from "~/server/api/trpc";
-import { publicProcedure } from "../procedure";
+import { parseResumeProcedure } from "../procedure";
 
 import { env } from "~/env";
 
@@ -356,7 +356,7 @@ const ResumeParseResultSchema = z.object({
 });
 
 export const resumeParserRouter = createTRPCRouter({
-  parseResume: publicProcedure
+  parseResume: parseResumeProcedure
     .input(
       z.object({
         resumeText: z.string().min(50), // Minimum 50 characters

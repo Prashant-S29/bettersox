@@ -14,7 +14,7 @@ export const Header: React.FC = () => {
       <div className="container flex h-14 items-center">
         <div className="mr-4 flex">
           <Link href="/" className="mr-6 flex items-center space-x-2">
-            <span className="text-xl font-bold">BetterSOX</span>
+            <span className="text-xl font-bold">BetterSox</span>
           </Link>
         </div>
 

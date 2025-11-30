@@ -21,7 +21,7 @@ import {
 
 // types
 import type { SearchFilters } from "~/types";
-import type { EnrichedRepository } from "~/server/api/routers/search";
+import type { EnrichedRepository } from "~/types/github";
 
 // components
 import {
@@ -38,6 +38,8 @@ const SearchPage: React.FC = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { refresh: refreshHistory } = useSearchHistoryContext();
+
+  // states
   const [filters, setFilters] = useState<SearchFilters | null>(null);
   const [query, setQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("stars");
@@ -50,17 +52,14 @@ const SearchPage: React.FC = () => {
   const [pledgeSigned, setPledgeSigned] = useState(false);
   const [pledgeLoading, setPledgeLoading] = useState(true);
 
-  // Load pledge status and preferences
   useEffect(() => {
     const loadData = async () => {
       try {
         setPledgeLoading(true);
 
-        // Load pledge status
         const pledgeStatus = await db.getPledgeStatus();
         setPledgeSigned(pledgeStatus?.signed ?? false);
 
-        // Load preferences
         const prefs = await db.getPreferences();
         if (prefs) {
           setSortBy(prefs.sortBy);
@@ -99,7 +98,11 @@ const SearchPage: React.FC = () => {
     void loadCachedResults();
   }, [filters, query]);
 
-  const { data, isLoading, error } = api.search.repositories.useQuery(
+  const {
+    data: repositories,
+    isLoading,
+    error,
+  } = api.search.repositories.useQuery(
     {
       filters: filters!,
       perPage: resultsPerPage,
@@ -110,18 +113,18 @@ const SearchPage: React.FC = () => {
   );
 
   useEffect(() => {
-    if (data && filters && query) {
+    if (repositories?.data && filters && query) {
       void cacheSearchResults(
         query,
         filters,
-        data.repositories,
-        data.totalCount,
+        repositories.data.repositories,
+        repositories.data.totalCount,
       );
       void addToSearchHistory(query, filters).then(() => {
         void refreshHistory();
       });
     }
-  }, [data, filters, query, refreshHistory]);
+  }, [filters, query, refreshHistory, repositories?.data]);
 
   const handleClearFilters = () => {
     router.push("/");
@@ -137,7 +140,6 @@ const SearchPage: React.FC = () => {
   };
 
   const handleReadPledge = () => {
-    // Get current URL path with search params
     const currentPath = window.location.pathname + window.location.search;
     const encodedPath = encodeURIComponent(currentPath);
     router.push(`/open-source-pledge?redirectTo=${encodedPath}`);
@@ -151,7 +153,6 @@ const SearchPage: React.FC = () => {
     );
   }
 
-  // Show pledge requirement if not signed
   if (!pledgeSigned) {
     return (
       <Container className="flex min-h-screen items-center justify-center">
@@ -173,7 +174,7 @@ const SearchPage: React.FC = () => {
     );
   }
 
-  let displayData = usingCache ? cachedResults : data;
+  let displayData = usingCache ? cachedResults : repositories?.data;
 
   if (displayData) {
     const sorted = [...displayData.repositories].sort((a, b) => {

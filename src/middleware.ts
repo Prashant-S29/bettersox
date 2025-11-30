@@ -1,18 +1,52 @@
 import { NextResponse } from "next/server";
+
 import type { NextRequest } from "next/server";
 import { featureFlags } from "~/constants";
 
-export function middleware(request: NextRequest) {
+const isLocal = process.env.NODE_ENV === "development";
+const isStaging = process.env.VERCEL_ENV === "preview";
+const isProduction = process.env.VERCEL_ENV === "production";
+
+const STAGING_BYPASS_PATHS = ["/api/cron/", "/api/queue/"];
+
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // skip for dev env
-  if (process.env.NODE_ENV === "development") {
-    return NextResponse.next();
+  if (isStaging) {
+    // Check if path should bypass staging cookie check
+    const shouldBypassStagingCheck = STAGING_BYPASS_PATHS.some((path) =>
+      pathname.startsWith(path),
+    );
+
+    if (!shouldBypassStagingCheck) {
+      // Check staging cookie on EVERY other request
+      const stagingCookie = request.cookies.get("staging_secret");
+      const isAuthorizedForStaging =
+        stagingCookie?.value === process.env.STAGING_SECRET;
+
+      if (!isAuthorizedForStaging) {
+        if (pathname.startsWith("/api/")) {
+          return NextResponse.json(
+            { error: "Forbidden - Staging access required" },
+            { status: 403 },
+          );
+        }
+
+        return NextResponse.redirect(new URL("/staging", request.url));
+      }
+    }
   }
 
-  for (const [, feature] of Object.entries(featureFlags)) {
-    if (pathname.startsWith(feature.href) && !feature.enabled) {
-      return NextResponse.redirect(new URL("/", request.url));
+  // prod
+  if (isProduction && pathname === "/staging") {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  if (!isLocal) {
+    for (const [, feature] of Object.entries(featureFlags)) {
+      if (pathname.startsWith(feature.href) && !feature.enabled) {
+        return NextResponse.redirect(new URL("/", request.url));
+      }
     }
   }
 
@@ -20,5 +54,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };

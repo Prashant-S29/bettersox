@@ -144,6 +144,5 @@ export function buildGitHubSearchQuery(filters: SearchFilters): string {
   }
 
   const query = queryParts.join(" ");
-  console.log("GitHub Search Query:", query);
   return query;
 }
