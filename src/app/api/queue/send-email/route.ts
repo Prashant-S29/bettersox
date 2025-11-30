@@ -31,13 +31,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    console.log("[Email Queue] Starting email processing job...");
-
     // Acquire lock to prevent concurrent runs
     const lockAcquired = await acquireLock(LOCK_NAME);
 
     if (!lockAcquired) {
-      console.log("[Email Queue] Job already running, skipping...");
       return NextResponse.json({
         success: true,
         message: "Job already running",
@@ -52,22 +49,14 @@ export async function GET(request: Request) {
         const job = await getNextEmailJob();
 
         if (!job) {
-          console.log("[Email Queue] No more jobs in queue");
           break;
         }
-
-        console.log(
-          `[Email Queue] Processing job ${i + 1}/${MAX_BATCH_SIZE} for ${job.userEmail}`,
-        );
 
         // Send email notification
         const result = await sendEventNotification(job);
 
         if (result.success) {
           processedCount++;
-          console.log(
-            `[Email Queue] Successfully sent email to ${job.userEmail} (Message ID: ${result.messageId})`,
-          );
 
           // Mark events as notified in database
           try {
@@ -85,10 +74,6 @@ export async function GET(request: Request) {
                   inArray(eventsLog.eventSignature, eventIds),
                 ),
               );
-
-            console.log(
-              `[Email Queue] Updated ${eventIds.length} events as notified`,
-            );
           } catch (dbError) {
             console.error(
               "[Email Queue] Failed to update events_log:",
@@ -115,10 +100,6 @@ export async function GET(request: Request) {
       }
 
       const duration = Date.now() - startTime;
-
-      console.log(`[Email Queue] Job completed in ${duration}ms`);
-      console.log(`[Email Queue] Processed: ${processedCount} emails`);
-      console.log(`[Email Queue] Errors: ${errorCount}`);
 
       return NextResponse.json({
         success: true,

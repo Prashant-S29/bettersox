@@ -34,9 +34,6 @@ export const auth = betterAuth({
           // Send welcome email to new users
           if (user.email && user.name) {
             try {
-              console.log(`[Database Hook] New user created: ${user.email}`);
-
-              // Send welcome email asynchronously (don't block user creation)
               sendWelcomeEmail({
                 email: user.email,
                 name: user.name,
@@ -48,7 +45,6 @@ export const auth = betterAuth({
                 "[Database Hook] Error in welcome email hook:",
                 error,
               );
-              // Don't throw - we don't want to fail user creation if email fails
             }
           }
         },

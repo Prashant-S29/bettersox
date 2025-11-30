@@ -13,10 +13,7 @@ export const SearchFiltersSchema = z.object({
     .enum(["very_new", "new", "established", "mature"])
     .nullable()
     .default(null),
-  competitionLevel: z
-    .enum(["low", "medium", "high"])
-    .nullable()
-    .default(null),
+  competitionLevel: z.enum(["low", "medium", "high"]).nullable().default(null),
   activityLevel: z
     .enum(["very_active", "active", "moderate", "inactive"])
     .nullable()

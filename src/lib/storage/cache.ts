@@ -39,14 +39,12 @@ export async function getCachedSearchResults(
     const cached = await db.getCachedSearch(searchId);
 
     if (cached) {
-      console.log(`Cache hit for search: ${searchId}`);
       return {
         results: cached.results,
         totalCount: cached.totalCount,
       };
     }
 
-    console.log(`Cache miss for search: ${searchId}`);
     return null;
   } catch (error) {
     console.error("Error getting cached search:", error);
@@ -81,8 +79,6 @@ export async function cacheSearchResults(
 
     // Also save individual repositories for offline access
     await db.saveRepositories(results);
-
-    console.log(`Cached search results: ${searchId}`);
   } catch (error) {
     console.error("Error caching search results:", error);
   }
@@ -106,7 +102,6 @@ export async function addToSearchHistory(
     };
 
     await db.addSearchHistory(historyItem);
-    console.log(`Added to search history: ${searchId}`);
   } catch (error) {
     console.error("Error adding to search history:", error);
   }
@@ -118,7 +113,6 @@ export async function addToSearchHistory(
 export async function clearExpiredCache(): Promise<void> {
   try {
     await db.clearExpiredCache();
-    console.log("Cleared expired cache entries");
   } catch (error) {
     console.error("Error clearing expired cache:", error);
   }

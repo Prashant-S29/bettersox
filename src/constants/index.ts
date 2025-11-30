@@ -7,7 +7,7 @@ type FeatureFlag = {
   isNew?: boolean;
 };
 
-export const MAX_USER_QUERY_LENGTH = 50;
+export const MAX_USER_QUERY_LENGTH = 5000;
 
 export const LOGO =
   "https://9jb1v1y2ig.ufs.sh/f/091oe9IncF3wAwJGx7z45D9ifEGN28PyqYMKVnIQudZhTX3C";
@@ -24,7 +24,6 @@ export const featureFlags: Record<string, FeatureFlag> = {
     enabled: true,
     beta: false,
     experimental: false,
-    isNew: true,
     href: "/match",
     label: "Match",
   },

@@ -38,6 +38,8 @@ const SearchPage: React.FC = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { refresh: refreshHistory } = useSearchHistoryContext();
+
+  // states
   const [filters, setFilters] = useState<SearchFilters | null>(null);
   const [query, setQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("stars");

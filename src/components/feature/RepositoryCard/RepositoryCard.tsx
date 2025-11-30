@@ -67,8 +67,6 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
     return num.toString();
   };
 
-  
-
   const handleBookmarkToggle = async () => {
     try {
       setIsBookmarkLoading(true);

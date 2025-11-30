@@ -27,9 +27,6 @@ export async function queueEmailNotification(
   try {
     // Store as JSON string
     await redis.lpush(QUEUE_KEY, JSON.stringify(job));
-    console.log(
-      `[Email Queue] Added job for ${job.userEmail} - ${job.repoFullName}`,
-    );
   } catch (error) {
     console.error("[Email Queue] Failed to add job:", error);
     throw error;

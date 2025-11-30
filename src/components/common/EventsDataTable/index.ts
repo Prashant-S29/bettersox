@@ -1,2 +1,2 @@
-export * from "./EventsDataTable"
-export * from "./columns"
+export * from "./EventsDataTable";
+export * from "./columns";

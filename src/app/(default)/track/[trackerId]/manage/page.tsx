@@ -25,7 +25,6 @@ import Link from "next/link";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -1036,38 +1035,6 @@ const ManageTracker: React.FC = () => {
                   )}
                 />
               </div>
-            </div>
-          </section>
-
-          <section className="bg-sidebar rounded-lg border">
-            <div className="px-5 pt-4 pb-3">
-              <h2 className="font-medium">AI Summaries</h2>
-            </div>
-            <Separator />
-            <div className="px-5 py-4">
-              <FormField
-                control={configForm.control}
-                name="enableAiSummary"
-                render={({ field }) => (
-                  <FormItem className="flex items-start space-y-0 space-x-3">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        disabled={updateMutation.isPending}
-                      />
-                    </FormControl>
-                    <div className="flex-1">
-                      <FormLabel className="cursor-pointer">
-                        Enable AI summaries
-                      </FormLabel>
-                      <FormDescription className="mt-1">
-                        Get AI-generated summaries of repository activity
-                      </FormDescription>
-                    </div>
-                  </FormItem>
-                )}
-              />
             </div>
           </section>
 

@@ -35,7 +35,6 @@ import {
 // libs
 import { db, type UserPreferences } from "~/lib/storage";
 
-
 const SettingsPage: React.FC = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(true);

@@ -26,13 +26,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    console.log("[Cron] Starting tracker check job...");
-
     // Acquire lock to prevent concurrent runs
     const lockAcquired = await acquireLock(LOCK_NAME);
 
     if (!lockAcquired) {
-      console.log("[Cron] Job already running, skipping...");
       return NextResponse.json({
         success: true,
         message: "Job already running",
@@ -51,8 +48,6 @@ export async function GET(request: Request) {
           isPaused: true,
         },
       });
-
-      console.log(`[Cron] Found ${activeTrackers.length} active trackers`);
 
       if (activeTrackers.length === 0) {
         return NextResponse.json({
@@ -73,12 +68,6 @@ export async function GET(request: Request) {
       const errors = results.filter((r) => r.error).length;
       const successful = results.length - errors;
       const duration = Date.now() - startTime;
-
-      console.log(`[Cron] Job completed in ${duration}ms`);
-      console.log(`[Cron] Processed: ${results.length} trackers`);
-      console.log(`[Cron] Successful: ${successful}`);
-      console.log(`[Cron] Errors: ${errors}`);
-      console.log(`[Cron] Total events detected: ${totalEvents}`);
 
       return NextResponse.json({
         success: true,

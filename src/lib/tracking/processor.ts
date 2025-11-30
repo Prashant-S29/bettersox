@@ -72,13 +72,11 @@ export async function processTracker(
 
     // Skip if paused
     if (tracker.isPaused) {
-      console.log(`[Tracker] ${tracker.repoFullName} is paused, skipping`);
       return result;
     }
 
     // Skip if not active
     if (!tracker.isActive) {
-      console.log(`[Tracker] ${tracker.repoFullName} is not active, skipping`);
       return result;
     }
 
@@ -96,8 +94,6 @@ export async function processTracker(
 
     // Compare signatures
     if (tracker.lastActivitySignature === newSignature) {
-      console.log(`[Tracker] ${tracker.repoFullName} - No changes detected`);
-
       // Update last checked time
       await db
         .update(trackedRepos)
@@ -114,18 +110,12 @@ export async function processTracker(
       return result;
     }
 
-    console.log(`[Tracker] ${tracker.repoFullName} - Changes detected!`);
-
     // Detect events using cached data
     const detector = new EventDetector(
       tracker.trackedEvents,
       cachedData ?? undefined,
     );
     const detectedEvents = detector.detect(newData);
-
-    console.log(
-      `[Tracker] ${tracker.repoFullName} - ${detectedEvents.length} events detected`,
-    );
 
     result.events = detectedEvents;
 
@@ -139,9 +129,6 @@ export async function processTracker(
         const exists = await eventExists(tracker.id, eventHash);
 
         if (exists) {
-          console.log(
-            `[Tracker] ${tracker.repoFullName} - Skipping duplicate event: ${event.title}`,
-          );
           continue;
         }
 
@@ -167,9 +154,6 @@ export async function processTracker(
     }
 
     result.eventsDetected = newEventsCount;
-    console.log(
-      `[Tracker] ${tracker.repoFullName} - ${newEventsCount} new events logged (${detectedEvents.length - newEventsCount} duplicates skipped)`,
-    );
 
     // Queue email notification if there are new events
     if (newEventsCount > 0) {
@@ -195,10 +179,6 @@ export async function processTracker(
               timestamp: event.timestamp,
             })),
           });
-
-          console.log(
-            `[Tracker] ${tracker.repoFullName} - Queued email notification`,
-          );
         } else {
           console.warn(
             `[Tracker] ${tracker.repoFullName} - No email found for user ${tracker.userId}`,
@@ -273,10 +253,6 @@ export async function processTrackersBatch(
   // Process in batches to avoid overwhelming GitHub API
   for (let i = 0; i < trackerIds.length; i += batchSize) {
     const batch = trackerIds.slice(i, i + batchSize);
-
-    console.log(
-      `[Tracker] Processing batch ${i / batchSize + 1} (${batch.length} trackers)`,
-    );
 
     const batchResults = await Promise.allSettled(
       batch.map((id) => processTracker(id)),

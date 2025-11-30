@@ -27,7 +27,7 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
+  // FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -46,7 +46,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { toast } from "sonner";
-import { Container } from "~/components/common";
+import { Container, SignupAlert } from "~/components/common";
 import { Separator } from "~/components/ui/separator";
 import { Badge } from "~/components/ui/badge";
 import { Switch } from "~/components/ui/switch";
@@ -57,8 +57,11 @@ import { ChevronLeft, Loader2Icon } from "lucide-react";
 
 // lib
 import { formatDate } from "~/lib/utils/date-parser";
+import { authClient } from "~/lib/auth-client";
 
 const NewTracker: React.FC = () => {
+  const session = authClient.useSession();
+
   const router = useRouter();
   const utils = api.useUtils();
 
@@ -70,7 +73,9 @@ const NewTracker: React.FC = () => {
   const [showAdditionalSection, setShowAdditionalSection] = useState(false);
 
   const { data: trackerData, isLoading } =
-    api.tracker.getTrackerMetadata.useQuery();
+    api.tracker.getTrackerMetadata.useQuery(undefined, {
+      enabled: !!session.data?.session.id,
+    });
 
   const verifyForm = useForm<VerifyRepoInput>({
     resolver: zodResolver(verifyRepoSchema),
@@ -224,7 +229,7 @@ const NewTracker: React.FC = () => {
   const isIssueSectionDisabled =
     isMaxEventsReached && formValues.issueEvent === "none";
 
-  if (isLoading) {
+  if (isLoading || session.isPending || session.isRefetching) {
     return (
       <Container className="flex flex-col gap-6">
         <div className="flex items-center justify-between">
@@ -243,6 +248,21 @@ const NewTracker: React.FC = () => {
             <Skeleton className="h-3 w-full max-w-[500px]" />
           </div>
         </div>
+      </Container>
+    );
+  }
+
+  if (!session?.data?.session.id) {
+    return (
+      <Container className="flex flex-col gap-6">
+        <div>
+          <h1 className="text-lg font-semibold">Track a Repo</h1>
+          <p className="text-muted-foreground text-sm">
+            Enable tracker on a github repository to get all the updates
+            directly in your inbox
+          </p>
+        </div>
+        <SignupAlert />
       </Container>
     );
   }
@@ -386,7 +406,7 @@ const NewTracker: React.FC = () => {
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <div className="flex justify-between w-full">
+              <div className="flex w-full justify-between">
                 <div>
                   <h1 className="text-lg font-semibold">Configure Tracking</h1>
                   <p className="text-muted-foreground text-sm">
@@ -961,7 +981,7 @@ const NewTracker: React.FC = () => {
               </div>
             </section>
 
-            <section className="bg-sidebar rounded-lg border">
+            {/* <section className="bg-sidebar rounded-lg border">
               <div className="px-5 pt-4 pb-3">
                 <h2 className="font-medium">AI Summaries</h2>
               </div>
@@ -991,7 +1011,7 @@ const NewTracker: React.FC = () => {
                   )}
                 />
               </div>
-            </section>
+            </section> */}
 
             {!isFormValid && selectedEventsCount > 0 && (
               <div className="bg-destructive/10 border-destructive/20 rounded-lg border p-4">
